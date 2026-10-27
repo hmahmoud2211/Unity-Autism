@@ -42,3 +42,6 @@
 Assets/NUMU/Generated/*.asset filter=lfs diff=lfs merge=lfs -text
 **/LightingData.asset filter=lfs diff=lfs merge=lfs -text
 **/Lightmap-*.exr filter=lfs diff=lfs merge=lfs -text
+Assets/NUMU/Worlds/**/*Meshes.asset filter=lfs diff=lfs merge=lfs -text
+Assets/NUMU/Worlds/**/*Terrain.asset filter=lfs diff=lfs merge=lfs -text
+**/*.exr filter=lfs diff=lfs merge=lfs -text

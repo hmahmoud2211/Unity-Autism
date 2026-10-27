@@ -1,0 +1,206 @@
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using Numu.World;
+
+namespace Numu.EditorTools.World
+{
+    public static partial class NumuParkBuilder
+    {
+        class GameplayRefs
+        {
+            public NumuPlayerController player;
+            public NumuFollowCamera followCamera;
+            public NumuInteractionSystem interactions;
+            public NumuEmotionScenario scenario;
+            public NumuInteractable miaInteraction;
+        }
+
+        static GameObject SpawnCharacter(string avatar, string displayName, Transform parent, Vector3 pos, float yaw)
+        {
+            var prefab = NumuCharacterSetup.Prefab(avatar);
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            go.name = displayName;
+            go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0, yaw, 0));
+            go.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.NpcController(avatar.StartsWith("Female"));
+            foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                smr.shadowCastingMode = ShadowCastingMode.On;
+                smr.lightProbeUsage = LightProbeUsage.BlendProbes;
+            }
+            return go;
+        }
+
+        /// <summary>Moves a character so its pelvis (in the given seated clip) rests on a seat point.</summary>
+        static void SeatOn(GameObject character, Vector3 seat, string sitClip, float backOffset)
+        {
+            var clip = NumuCharacterSetup.Clip(sitClip);
+            var anim = character.GetComponent<Animator>();
+            clip.SampleAnimation(character, 1f);
+            var hips = anim.GetBoneTransform(HumanBodyBones.Hips);
+            Vector3 want = seat + Vector3.up * 0.1f - character.transform.forward * backOffset;
+            character.transform.position += want - hips.position;
+        }
+
+        static NumuNpc MakeNpc(GameObject go, string baseState, Transform look, params string[] variations)
+        {
+            var npc = go.AddComponent<NumuNpc>();
+            npc.displayName = go.name;
+            npc.baseState = baseState;
+            npc.lookTarget = look;
+            npc.idleVariations = new List<string>(variations);
+            npc.face = go.GetComponent<NumuFacialExpressions>();
+            return npc;
+        }
+
+        static void Blocker(GameObject go, float radius, float height)
+        {
+            var c = go.AddComponent<CapsuleCollider>();
+            c.radius = radius;
+            c.height = height;
+            c.center = new Vector3(0, height * 0.5f, 0);
+        }
+
+        static GameplayRefs BuildCharactersAndGameplay()
+        {
+            var refs = new GameplayRefs();
+            var g = Group("Characters");
+
+            // ---------------------------------------------------------------- player (third person)
+            var player = SpawnCharacter("Male_Child_01", "Player", g, OnGround(PlayerStart), 0f);
+            player.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.PlayerController;
+            var cc = player.AddComponent<CharacterController>();
+            cc.height = 1.4f;
+            cc.radius = 0.22f;
+            cc.center = new Vector3(0, 0.72f, 0);
+            cc.stepOffset = 0.3f;
+            cc.slopeLimit = 45f;
+            cc.skinWidth = 0.03f;
+            var pc = player.AddComponent<NumuPlayerController>();
+            pc.animator = player.GetComponent<Animator>();
+            refs.player = pc;
+
+            var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
+            camGo.transform.SetParent(_root, false);
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = 50f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 400f;
+            var camData = camGo.AddComponent<UniversalAdditionalCameraData>();
+            camData.renderPostProcessing = true;
+            camData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            // Nothing in the park samples the depth texture: skipping it avoids a depth prepass on mobile.
+            camData.requiresDepthOption = CameraOverrideOption.Off;
+            camData.requiresColorOption = CameraOverrideOption.Off;
+            camGo.AddComponent<AudioListener>();
+            var follow = camGo.AddComponent<NumuFollowCamera>();
+            follow.target = player.transform;
+            follow.distance = 4.8f;
+            follow.height = 2.3f;
+            follow.lookHeight = 1.05f;
+            follow.obstacleMask = ~0 & ~(1 << 2);
+            camGo.transform.position = player.transform.position + new Vector3(0, 2.3f, -4.8f);
+            camGo.transform.LookAt(player.transform.position + Vector3.up * 1.05f);
+            pc.cameraTransform = camGo.transform;
+            refs.followCamera = follow;
+
+            // ---------------------------------------------------------------- Mia on the swing (the activity)
+            var seatPoint = _root.Find("Playground/SwingSet/SeatPivot_0/SeatPoint");
+            var mia = SpawnCharacter("Female_Child_01", "Mia", seatPoint, seatPoint.position, 180f);
+            mia.GetComponent<Animator>().cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            SeatOn(mia, seatPoint.position, "f_sit_chair_idle_neutral_01", 0.02f);
+            var miaNpc = MakeNpc(mia, "SitSwing", player.transform);
+            miaNpc.maxLookWeight = 0.55f;
+            // Hands grip the chains about shoulder height above the seat.
+            foreach (var (side, name) in new[] { (-1f, "LeftHandChain"), (1f, "RightHandChain") })
+            {
+                var h = new GameObject(name).transform;
+                h.SetParent(seatPoint.parent, false);
+                // Mia faces -Z, so her left hand is on +X in the swing's space.
+                h.localPosition = new Vector3(-side * 0.2f, seatPoint.localPosition.y + 0.42f, 0.03f);
+                h.localRotation = Quaternion.Euler(0, 180, side * 90f);
+                if (side < 0) miaNpc.leftHandTarget = h; else miaNpc.rightHandTarget = h;
+            }
+            var miaFace = mia.GetComponent<NumuFacialExpressions>();
+            miaFace.SetExpression(NumuEmotion.Happy, 0.9f);
+
+            var head = mia.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head);
+            var interactionGo = new GameObject("Interaction_SayHiToMia");
+            interactionGo.transform.SetParent(g, false);
+            Vector3 seatGround = OnGround(new Vector3(seatPoint.position.x, 0, seatPoint.position.z));
+            interactionGo.transform.position = seatGround + Vector3.back * 2.4f;
+            var interactable = interactionGo.AddComponent<NumuInteractable>();
+            interactable.prompt = "Say hi to Mia";
+            interactable.radius = 2.2f;
+            interactable.focusPoint = head;
+            refs.miaInteraction = interactable;
+
+            var scenarioGo = new GameObject("Scenario_ParkSwingHappy");
+            scenarioGo.transform.SetParent(_root, false);
+            var scenario = scenarioGo.AddComponent<NumuEmotionScenario>();
+            scenario.interactable = interactable;
+            scenario.npc = miaNpc;
+            scenario.face = miaFace;
+            scenario.swing = seatPoint.parent.GetComponent<NumuSwing>();
+            scenario.faceAnchor = head;
+            scenario.player = pc;
+            scenario.followCamera = follow;
+            scenario.talkState = "SitSwing";
+            scenario.idleState = "SitSwing";
+            scenario.happyReaction = "SitSwing";
+            refs.scenario = scenario;
+
+            // ---------------------------------------------------------------- ambient park life
+            var lina = SpawnCharacter("Female_Child_02", "Lina", g, OnGround(new Vector3(15.8f, 0, 5.2f)), 215f);
+            lina.transform.position += Vector3.up * 0.06f;
+            MakeNpc(lina, "Idle", player.transform, "Cheer", "Clap", "Wave", "LookAround");
+            lina.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.6f);
+            Blocker(lina, 0.25f, 1.4f);
+
+            var omar = SpawnCharacter("Male_Child_02", "Omar", g, OnGround(new Vector3(-8f, 0, -3f)), 90f);
+            var omarNpc = MakeNpc(omar, "Idle", player.transform);
+            omarNpc.walkSpeed = 1.05f;
+            omarNpc.walkState = "Walk";
+            var wpRoot = Group("OmarRoute", g);
+            foreach (var p in new[] { new Vector3(-9.5f, 0, -3.5f), new Vector3(-5f, 0, 1.5f), new Vector3(-2.5f, 0, -3.5f), new Vector3(-6.5f, 0, -7f) })
+            {
+                var wp = new GameObject("Waypoint").transform;
+                wp.SetParent(wpRoot, false);
+                wp.position = OnGround(p);
+                omarNpc.waypoints.Add(wp);
+            }
+            omar.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.4f);
+
+            var bench = _root.Find("Props").GetChild(0);
+            var mum = SpawnCharacter("Female_Adult_01", "Grown-up on the bench", g, bench.position, BenchFacingYaw(bench));
+            SeatOn(mum, bench.position + Vector3.up * BenchSeatHeight(bench), "f_sit_chair_idle_neutral_01", -0.02f);
+            MakeNpc(mum, "Sit", player.transform);
+            mum.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.35f);
+
+            var helper = SpawnCharacter("Male_Adult_02", "Park helper", g, OnGround(new Vector3(4.2f, 0, 6.6f)), 70f);
+            MakeNpc(helper, "Listen", player.transform, "LookAround", "Idle");
+            helper.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Neutral, 1f);
+            Blocker(helper, 0.28f, 1.8f);
+
+            var interactionsGo = new GameObject("InteractionSystem");
+            interactionsGo.transform.SetParent(_root, false);
+            var interactions = interactionsGo.AddComponent<NumuInteractionSystem>();
+            interactions.player = player.transform;
+            refs.interactions = interactions;
+            scenario.interactions = interactions;
+
+            _log.AppendLine("Characters: player child (third person), Mia on the swing (happy), Lina by the slide, Omar strolling, a grown-up on the bench, a park helper.");
+            return refs;
+        }
+
+        /// <summary>The Poly Haven bench's backrest side decides which way a sitter faces.</summary>
+        static float BenchFacingYaw(Transform bench) => bench.eulerAngles.y + BenchFrontYawOffset;
+
+        // The bench model's seat faces +Z in its own space (backrest on -Z).
+        const float BenchFrontYawOffset = 0f;
+
+        static float BenchSeatHeight(Transform bench) => 0.44f;
+    }
+}

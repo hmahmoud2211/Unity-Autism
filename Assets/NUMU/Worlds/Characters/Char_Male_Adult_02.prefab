@@ -1,0 +1,246 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1485523211394173178
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5423888773139566379, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_SkinnedMotionVectors
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_Name
+      value: Char_Male_Adult_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8543def31d8b44c5c9799a0e5413a1e9, type: 2}
+    - target: {fileID: 5866666021909216657, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5869389422868568297}
+  m_SourcePrefab: {fileID: 100100000, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+--- !u!1 &1755500797479777707 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+  m_PrefabInstance: {fileID: 1485523211394173178}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5869389422868568297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1755500797479777707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86e04a072573b46f28de5545c5ec0307, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Numu.World.NumuFacialExpressions
+  face: {fileID: 2317060882619054127}
+  presets:
+  - emotion: 0
+    shapes: []
+  - emotion: 1
+    shapes:
+    - shape: AK_44_MouthSmileLeft
+      weight: 1
+    - shape: AK_45_MouthSmileRight
+      weight: 1
+    - shape: SR_34_Mouth_Smile_Left
+      weight: 0.75
+    - shape: SR_35_Mouth_Smile_Right
+      weight: 0.75
+    - shape: AU_12_LipCornerPuller
+      weight: 0.55
+    - shape: AK_07_CheekSquintLeft
+      weight: 0.6
+    - shape: AK_08_CheekSquintRight
+      weight: 0.6
+    - shape: AU_06_CheekRaiser
+      weight: 0.55
+    - shape: AK_19_EyeSquintLeft
+      weight: 0.3
+    - shape: AK_20_EyeSquintRight
+      weight: 0.3
+    - shape: AK_25_JawOpen
+      weight: 0.14
+    - shape: AK_28_MouthDimpleLeft
+      weight: 0.3
+    - shape: AK_29_MouthDimpleRight
+      weight: 0.3
+  - emotion: 2
+    shapes:
+    - shape: AK_03_BrowInnerUp
+      weight: 1
+    - shape: AU_01_InnerBrowRaiser
+      weight: 0.6
+    - shape: AK_30_MouthFrownLeft
+      weight: 1
+    - shape: AK_31_MouthFrownRight
+      weight: 1
+    - shape: AU_15_LipCornerDepressor
+      weight: 0.6
+    - shape: SR_32_Mouth_Sad_Left
+      weight: 0.6
+    - shape: SR_33_Mouth_Sad_Right
+      weight: 0.6
+    - shape: AK_42_MouthShrugLower
+      weight: 0.4
+    - shape: AU_17_ChinRaiser
+      weight: 0.3
+    - shape: AK_11_EyeLookDownLeft
+      weight: 0.25
+    - shape: AK_12_EyeLookDownRight
+      weight: 0.25
+    - shape: AU_41_LidDroop
+      weight: 0.3
+  - emotion: 3
+    shapes:
+    - shape: AK_01_BrowDownLeft
+      weight: 0.9
+    - shape: AK_02_BrowDownRight
+      weight: 0.9
+    - shape: AU_04_BrowLowerer
+      weight: 0.35
+    - shape: SR_04_Eye_Frown
+      weight: 0.3
+    - shape: AK_50_NoseSneerLeft
+      weight: 0.6
+    - shape: AK_51_NoseSneerRight
+      weight: 0.6
+    - shape: AU_09_NoseWrinkler
+      weight: 0.3
+    - shape: AK_19_EyeSquintLeft
+      weight: 0.4
+    - shape: AK_20_EyeSquintRight
+      weight: 0.4
+    - shape: AU_23_LipTightener
+      weight: 0.5
+    - shape: AK_36_MouthPressLeft
+      weight: 0.5
+    - shape: AK_37_MouthPressRight
+      weight: 0.5
+    - shape: AK_30_MouthFrownLeft
+      weight: 0.4
+    - shape: AK_31_MouthFrownRight
+      weight: 0.4
+  - emotion: 4
+    shapes:
+    - shape: AK_03_BrowInnerUp
+      weight: 1
+    - shape: AU_01_InnerBrowRaiser
+      weight: 0.6
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 0.6
+    - shape: AK_05_BrowOuterUpRight
+      weight: 0.6
+    - shape: AU_02_OuterBrowRaiser
+      weight: 0.4
+    - shape: AK_21_EyeWideLeft
+      weight: 1
+    - shape: AK_22_EyeWideRight
+      weight: 1
+    - shape: AU_05_UpperLidRaiser
+      weight: 0.5
+    - shape: AK_46_MouthStretchLeft
+      weight: 0.8
+    - shape: AK_47_MouthStretchRight
+      weight: 0.8
+    - shape: AU_20_LipStretcher
+      weight: 0.5
+    - shape: AK_25_JawOpen
+      weight: 0.25
+  - emotion: 5
+    shapes:
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 1
+    - shape: AK_05_BrowOuterUpRight
+      weight: 1
+    - shape: AU_02_OuterBrowRaiser
+      weight: 0.6
+    - shape: AK_03_BrowInnerUp
+      weight: 0.7
+    - shape: AK_21_EyeWideLeft
+      weight: 1
+    - shape: AK_22_EyeWideRight
+      weight: 1
+    - shape: AU_05_UpperLidRaiser
+      weight: 0.5
+    - shape: AK_25_JawOpen
+      weight: 0.55
+    - shape: AU_26_JawDrop
+      weight: 0.4
+    - shape: AK_32_MouthFunnel
+      weight: 0.3
+  emotion: 0
+  intensity: 1
+  transitionTime: 0.35
+  autoBlink: 1
+  blinkShapes:
+  - AK_09_EyeBlinkLeft
+  - AK_10_EyeBlinkRight
+  blinkInterval: {x: 2.2, y: 5.5}
+  talking: 0
+  talkShapes:
+  - shape: AK_25_JawOpen
+    weight: 0.3
+  - shape: AA_VI_10_aa
+    weight: 0.45
+--- !u!137 &2317060882619054127 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -5423888773139566379, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}
+  m_PrefabInstance: {fileID: 1485523211394173178}
+  m_PrefabAsset: {fileID: 0}

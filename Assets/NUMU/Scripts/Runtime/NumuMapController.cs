@@ -296,6 +296,13 @@ namespace Numu
         {
             NumuAudio.Play(NumuSfx.Tap);
             var info = NumuData.Get(_island);
+            // Levels that already have a playable 3D activity open their world; the rest are still in development.
+            string scenario = World.NumuScenarioCatalog.ScenarioFor(_island, _level);
+            if (scenario != null)
+            {
+                World.NumuSceneRouter.OpenWorld(_island, scenario);
+                return;
+            }
             ShowToast($"“{info.Levels[_level - 1]}” is coming soon!");
         }
 
