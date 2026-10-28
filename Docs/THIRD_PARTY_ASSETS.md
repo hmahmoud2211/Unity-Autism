@@ -19,6 +19,7 @@ Each folder also contains a `LICENSE.md`.
 | ambientCG materials, indoor worlds: WoodFloor051, PaintedPlaster017, Plaster001, Tiles107, Tiles040, Terrazzo005, Carpet016, Carpet012, Fabric030, Marble012, Wood049, Wood051, Metal032, Plastic010 | https://ambientcg.com | CC0 | Floors, walls, worktops, rugs, curtains, cabinets, metal |
 
 Generated in-project (no external license):
+- NUMU-style boy textures (`Assets/NUMU/Characters/Stylized`), repainted from the Rocketbox Male_Child_01 textures (MIT) by `Tools/AssetPipeline/stylize_character.py`.
 - Leaf-cluster and grass-blade atlases (`Assets/NUMU/Worlds/Textures`), made from ambientCG Leaf001.
 - Procedural trees, playground, swing chains and lantern LODs (`NumuRealisticKit`).
 - Indoor architecture, kitchen cabinets, fridge, TV, shelving, chillers, checkouts, trolleys, products and produce (`NumuInteriorKit`, `NumuProductKit`).

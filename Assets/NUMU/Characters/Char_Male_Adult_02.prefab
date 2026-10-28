@@ -261,6 +261,7 @@ MonoBehaviour:
   emotion: 0
   intensity: 1
   transitionTime: 0.35
+  baseShapes: []
   autoBlink: 1
   blinkShapes:
   - AK_09_EyeBlinkLeft

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2053703856668809512
+--- !u!1 &2026324308487851947
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7350523135570598181}
-  - component: {fileID: 4981699118891109409}
-  - component: {fileID: 2592216966112457267}
+  - component: {fileID: 2512091228058749238}
+  - component: {fileID: 6970917222895444716}
+  - component: {fileID: 1919445048491515841}
   m_Layer: 0
   m_Name: metal_office_desk
   m_TagString: Untagged
@@ -18,13 +18,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7350523135570598181
+--- !u!4 &2512091228058749238
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2053703856668809512}
+  m_GameObject: {fileID: 2026324308487851947}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
   m_LocalPosition: {x: 0.00000062584877, y: 0.000000014901161, z: 0}
@@ -33,21 +33,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4881861259460075447}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4981699118891109409
+--- !u!33 &6970917222895444716
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2053703856668809512}
+  m_GameObject: {fileID: 2026324308487851947}
   m_Mesh: {fileID: 2493703676226360881, guid: 045e867338b0848da9c59f12612500c3, type: 3}
---- !u!23 &2592216966112457267
+--- !u!23 &1919445048491515841
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2053703856668809512}
+  m_GameObject: {fileID: 2026324308487851947}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -299,7 +299,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7350523135570598181}
+  - {fileID: 2512091228058749238}
   - {fileID: 20886026229114699}
   - {fileID: 4391069134585643323}
   - {fileID: 8982444897943004923}
@@ -360,7 +360,7 @@ LODGroup:
   - screenRelativeHeight: 0.012
     fadeTransitionWidth: 0
     renderers:
-    - renderer: {fileID: 2592216966112457267}
+    - renderer: {fileID: 1919445048491515841}
     - renderer: {fileID: 3285759202396863442}
     - renderer: {fileID: 4931316715492982467}
     - renderer: {fileID: 5007812072516385446}

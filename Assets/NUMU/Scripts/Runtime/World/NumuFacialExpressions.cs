@@ -39,6 +39,8 @@ namespace Numu.World
         public float transitionTime = 0.35f;
 
         [Header("Blink")]
+        [Tooltip("Resting face applied under every expression (a character's own look, e.g. slightly wider eyes, a shy glance).")]
+        public List<ShapeWeight> baseShapes = new List<ShapeWeight>();
         public bool autoBlink = true;
         public List<string> blinkShapes = new List<string>();
         public Vector2 blinkInterval = new Vector2(2.2f, 5.5f);
@@ -141,6 +143,12 @@ namespace Numu.World
                     int i = Index(s.shape);
                     if (i >= 0) _target[i] = Mathf.Max(_target[i], s.weight * intensity);
                 }
+            }
+
+            foreach (var s in baseShapes)
+            {
+                int i = Index(s.shape);
+                if (i >= 0) _target[i] = Mathf.Max(_target[i], s.weight);
             }
 
             float dt = Application.isPlaying ? Time.deltaTime : 0.016f;

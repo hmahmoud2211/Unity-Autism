@@ -1,5 +1,26 @@
 # NUMU characters and camera
 
+## NUMU character style (matching the JeStiMulE reference)
+
+Reference: `Assets/References/Character_Style_Reference.png`, a JeStiMulE boy in a supermarket. The player is now **`Char_NUMU_Boy`** (`Assets/NUMU/Characters/Char_NUMU_Boy.prefab`): the Rocketbox boy (MIT) restyled. It keeps the same humanoid rig, animations, `EmotionController` and 175 face blendshapes.
+
+- **Repainted textures** (`Tools/AssetPipeline/stylize_character.py` → `Assets/NUMU/Characters/Stylized/Textures`):
+  - flat pale skin with pores and photographic lighting removed
+  - a smooth burnt-orange hair cap with a clean hairline
+  - thick dark brows, light blue eyes, a soft simple mouth
+  - a dark V-neck sweater with wide black and grey stripes that wrap the torso and sleeves
+  - plain slate trousers
+- **Matte materials** (URP Lit, no normal maps, smoothness 0.08–0.18) for the soft, lightly shaded look.
+- **Head proportions:** the head bone is scaled (0.93, 1.1, 0.96) for a longer, narrower face.
+- **Resting face** (`NumuFacialExpressions.baseShapes`): slightly wider eyes, a soft downward glance and gently raised inner brows (calm, a little shy).
+
+Comparison: `Screenshots/Character_Style/01_reference_vs_numu_boy.jpg`.
+
+**Still different from the reference.** These need real modelling, in Blender or a custom character, and can't be done with textures alone:
+- **Face shape:** a teenager's long face, strong nose and jaw and bigger eye sockets. The base mesh is a younger child with a rounder face.
+- **Hair:** the reference hair is a separate smooth volume with a side part. Here it is painted onto the skull, so its outline is the head's outline plus the original fringe.
+- **Pose:** the reference's slouched, head-down pose needs a dedicated idle animation.
+
 ## Anime characters (VRoid / VRM): optional, off by default
 
 The art direction is semi-realistic humans (JeStiMulE style), so `NumuCharacterSetup.UseAnimeCharacters` is **false**: every world uses the Rocketbox human characters. The VRM pipeline below still works when it is turned on.

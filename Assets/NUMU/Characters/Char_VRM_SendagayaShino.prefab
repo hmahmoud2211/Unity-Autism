@@ -11,7 +11,7 @@ PrefabInstance:
     - target: {fileID: -5694092435888646316, guid: ba75d4499600c4b639c5a60b49aa5bdc, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: -2893289010855258416, guid: 305cce44900644c30bd9c69417fd6023, type: 2}
+      objectReference: {fileID: -6859657409991396371, guid: 305cce44900644c30bd9c69417fd6023, type: 2}
     - target: {fileID: -5694092435888646316, guid: ba75d4499600c4b639c5a60b49aa5bdc, type: 3}
       propertyPath: m_Materials.Array.size
       value: 6
@@ -43,7 +43,7 @@ PrefabInstance:
     - target: {fileID: -5352740006539593630, guid: ba75d4499600c4b639c5a60b49aa5bdc, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: -4183461241569988094, guid: 305cce44900644c30bd9c69417fd6023, type: 2}
+      objectReference: {fileID: 3421447552383835643, guid: 305cce44900644c30bd9c69417fd6023, type: 2}
     - target: {fileID: -5352740006539593630, guid: ba75d4499600c4b639c5a60b49aa5bdc, type: 3}
       propertyPath: m_Materials.Array.size
       value: 2
@@ -217,6 +217,7 @@ MonoBehaviour:
   emotion: 0
   intensity: 1
   transitionTime: 0.35
+  baseShapes: []
   autoBlink: 1
   blinkShapes:
   - Fcl_EYE_Close

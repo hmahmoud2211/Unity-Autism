@@ -40,8 +40,15 @@ namespace Numu.EditorTools.World
         /// </summary>
         public static bool UseAnimeCharacters = false;
 
-        /// <summary>The character the child plays: the Rocketbox boy (or the anime avatar when anime is turned on).</summary>
-        public static string PlayerAvatar => UseAnimeCharacters && Prefab("VRM_SendagayaShino") != null ? "VRM_SendagayaShino" : "Male_Child_01";
+        /// <summary>
+        /// The character the child plays: the NUMU-style boy (stylised Rocketbox boy, see <see cref="SetupStylizedBoy"/>),
+        /// or the anime avatar when anime is turned on.
+        /// </summary>
+        public static string PlayerAvatar =>
+            UseAnimeCharacters && Prefab("VRM_SendagayaShino") != null ? "VRM_SendagayaShino" :
+            Prefab(StylizedBoy) != null ? StylizedBoy : "Male_Child_01";
+
+        public const string StylizedBoy = "NUMU_Boy";
         public static RuntimeAnimatorController NpcController(bool female) => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Dir}/{(female ? "NPC_Female" : "NPC_Male")}.controller");
 
         public static void SetupAll(StringBuilder log)
@@ -59,6 +66,7 @@ namespace Numu.EditorTools.World
                 avatars++;
             }
             int vrm = SetupVrmCharacters(female, male);
+            SetupStylizedBoy(male);
             log?.AppendLine($"Characters: {avatars} Rocketbox avatars and {vrm} anime (VRM) avatars → prefabs with facial rigs; {clips} humanoid clips; 4 animator controllers.");
         }
 
@@ -311,6 +319,51 @@ namespace Numu.EditorTools.World
             ConfigureFace(face);
             inst.AddComponent<EmotionController>().face = face;
             PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(name));
+            Object.DestroyImmediate(inst);
+        }
+
+        /// <summary>
+        /// NUMU's serious-game character style (reference: JeStiMulE): the Rocketbox boy with repainted, flattened
+        /// textures (Tools/AssetPipeline/stylize_character.py), matte materials without normal maps for soft, simple
+        /// shading, a slightly longer and narrower head, and a calm, slightly shy resting face. Same humanoid rig,
+        /// animations and 175 facial blendshapes as the original.
+        /// </summary>
+        static void SetupStylizedBoy(AnimatorController controller)
+        {
+            const string texDir = "Assets/NUMU/Characters/Stylized/Textures";
+            var headTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texDir}/numu_boy_head.png");
+            var bodyTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texDir}/numu_boy_body.png");
+            var source = Prefab("Male_Child_01");
+            if (headTex == null || bodyTex == null || source == null) return;
+            var head = NumuWorldMaterials.Lit("M_NUMU_Boy_Head", new NumuWorldMaterials.Spec { baseMap = headTex, smoothness = 0.18f });
+            var body = NumuWorldMaterials.Lit("M_NUMU_Boy_Body", new NumuWorldMaterials.Spec { baseMap = bodyTex, smoothness = 0.08f });
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
+            inst.name = $"Char_{StylizedBoy}";
+            foreach (var r in inst.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                var mats = r.sharedMaterials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    if (mats[i] == null) continue;
+                    if (mats[i].name.EndsWith("_head")) mats[i] = head;
+                    else if (mats[i].name.EndsWith("_body")) mats[i] = body;
+                }
+                r.sharedMaterials = mats;
+            }
+            var anim = inst.GetComponent<Animator>();
+            anim.runtimeAnimatorController = controller;
+            // A slightly longer, narrower face, as in the reference (humanoid animation never writes bone scale).
+            var headBone = anim.GetBoneTransform(HumanBodyBones.Head);
+            if (headBone != null) headBone.localScale = new Vector3(0.93f, 1.1f, 0.96f);
+            var face = inst.GetComponent<NumuFacialExpressions>();
+            // Resting look: eyes a little wider, a soft glance down, inner brows slightly raised.
+            face.baseShapes = new List<NumuFacialExpressions.ShapeWeight>
+            {
+                W("AK_21_EyeWideLeft", 0.45f), W("AK_22_EyeWideRight", 0.45f), W("AK_11_EyeLookDownLeft", 0.12f), W("AK_12_EyeLookDownRight", 0.12f),
+                W("AK_03_BrowInnerUp", 0.18f),
+            };
+            PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(StylizedBoy));
             Object.DestroyImmediate(inst);
         }
 
