@@ -236,22 +236,15 @@ namespace Numu.World
         /// <summary>Standing characters turn towards the child (seated ones only look).</summary>
         IEnumerator TurnActorsToPlayer()
         {
-            var turning = new List<(Transform t, Quaternion from, Quaternion to)>();
+            float duration = Numu.NumuSettings.ReducedMotion ? 0f : 0.9f;
+            var running = new List<Coroutine>();
             foreach (var a in actors)
             {
                 Vector3 to = Vector3.ProjectOnPlane(player.transform.position - a.npc.transform.position, Vector3.up);
                 if (!a.turnToPlayer || to.sqrMagnitude < 0.01f) continue;
-                turning.Add((a.npc.transform, a.npc.transform.rotation, Quaternion.LookRotation(to.normalized)));
+                running.Add(StartCoroutine(a.npc.TurnTo(Quaternion.LookRotation(to.normalized), duration)));
             }
-            if (turning.Count == 0) yield break;
-            float duration = Numu.NumuSettings.ReducedMotion ? 0f : 0.6f;
-            for (float t = 0f; t < duration; t += Time.deltaTime)
-            {
-                float k = Mathf.SmoothStep(0f, 1f, t / duration);
-                foreach (var (tr, from, to) in turning) tr.rotation = Quaternion.Slerp(from, to, k);
-                yield return null;
-            }
-            foreach (var (tr, _, to) in turning) tr.rotation = to;
+            foreach (var c in running) yield return c;
         }
 
         /// <summary>Frames an actor's face slightly off-axis at eye level; that actor looks at the viewer, the others at the child.</summary>

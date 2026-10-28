@@ -4,8 +4,9 @@ using UnityEngine.InputSystem;
 namespace Numu.World
 {
     /// <summary>
-    /// Third-person child avatar: camera-relative walking with keyboard, gamepad or the on-screen joystick.
-    /// Movement is deliberately gentle (walk by default, jog only when pushed far) to keep play calm.
+    /// The child avatar: camera-relative walking with keyboard, gamepad or the on-screen joystick, in third or
+    /// first person. Movement is deliberately gentle (walk by default, jog only when pushed far) to keep play calm.
+    /// In first person the body turns with the view and steps sideways instead of turning.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class NumuPlayerController : MonoBehaviour
@@ -21,6 +22,7 @@ namespace Numu.World
         static readonly int SpeedId = Animator.StringToHash("Speed");
 
         CharacterController _cc;
+        NumuFollowCamera _view;
         float _verticalVelocity;
         float _animSpeed;
 
@@ -30,6 +32,11 @@ namespace Numu.World
         public float CurrentSpeed { get; private set; }
 
         void Awake() => _cc = GetComponent<CharacterController>();
+
+        void Start()
+        {
+            if (cameraTransform != null) _view = cameraTransform.GetComponent<NumuFollowCamera>();
+        }
 
         Vector2 ReadMove()
         {
@@ -61,7 +68,12 @@ namespace Numu.World
             // Up to 60% stick = walk; beyond that eases into a jog.
             float speed = magnitude <= 0.6f ? walkSpeed * (magnitude / 0.6f) : Mathf.Lerp(walkSpeed, runSpeed, (magnitude - 0.6f) / 0.4f);
 
-            if (magnitude > 0.05f)
+            if (_view != null && _view.IsFirstPerson && InputEnabled)
+            {
+                // First person: the body always faces where the child looks.
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0f, _view.ViewYaw, 0f), turnSpeed * 2f * Time.deltaTime);
+            }
+            else if (magnitude > 0.05f)
             {
                 Quaternion target = Quaternion.LookRotation(move.normalized, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, target, turnSpeed * Time.deltaTime);

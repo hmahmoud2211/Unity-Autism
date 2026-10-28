@@ -68,10 +68,15 @@ def rocketbox():
     moving = ["f_walk_neutral_01", "m_walk_neutral_01", "f_run_slow_01", "m_run_slow_01"]
     for a in static:
         fetch(f"{RB}/Animations/all_animations_max_motextr_static/{a}.max.fbx", f"{STAGE}/Rocketbox/Animations/{a}.fbx")
+    # Turn-in-place and sit-down/stand-up transitions (full root motion, baked into the pose on import).
+    transitions = ["f_turn_left_90", "f_turn_right_90", "m_turn_left_90", "m_turn_right_90",
+                   "f_sit_down_chair_01", "m_sit_down_chair_01", "f_sit_stand_up_chair_01", "m_sit_stand_up_chair_01"]
     for a in moving:
         fetch(f"{RB}/Animations/all_animations_max_motextr_xy/{a}.max.fbx", f"{STAGE}/Rocketbox/Animations/{a}.fbx")
+    for a in transitions:
+        fetch(f"{RB}/Animations/all_animations_max_motextr_xyz/{a}.max.fbx", f"{STAGE}/Rocketbox/Animations/{a}.fbx")
     fetch("https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/master/LICENSE.md", f"{STAGE}/Rocketbox/LICENSE.md")
-    print("rocketbox animations", len(static) + len(moving))
+    print("rocketbox animations", len(static) + len(moving) + len(transitions))
 
 
 PH_PARK = ["painted_wooden_bench", "street_lamp_02", "metal_trash_can", "wooden_picnic_table", "shrub_03", "shrub_04", "fern_02",

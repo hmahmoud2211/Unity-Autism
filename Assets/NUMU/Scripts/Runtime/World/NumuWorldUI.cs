@@ -50,6 +50,10 @@ namespace Numu.World
         public CanvasGroup toastGroup;
         public TMP_Text toastText;
         public CanvasGroup joystickGroup;
+        [Tooltip("Switches between third- and first-person view.")]
+        public Button viewButton;
+        public TMP_Text viewLabel;
+        public CanvasGroup lookAreaGroup;
 
         /// <summary>A picture option for <see cref="AskChoice"/>; it temporarily replaces an emotion card.</summary>
         public struct Option
@@ -96,6 +100,30 @@ namespace Numu.World
             // Touch joystick only where touch input exists (always shown in the Editor for testing).
             _joystickAllowed = Application.isEditor || Touchscreen.current != null;
             Show(joystickGroup, _joystickAllowed, true);
+            Show(lookAreaGroup, true, true);
+            _view = Camera.main != null ? Camera.main.GetComponent<NumuFollowCamera>() : null;
+            if (viewButton != null && _view != null)
+            {
+                viewButton.onClick.AddListener(() =>
+                {
+                    Numu.NumuAudio.Play(Numu.NumuSfx.Tap);
+                    _view.ToggleView();
+                });
+                _view.ViewChanged += UpdateViewLabel;
+                UpdateViewLabel(_view.CurrentView);
+            }
+        }
+
+        NumuFollowCamera _view;
+
+        void OnDestroy()
+        {
+            if (_view != null) _view.ViewChanged -= UpdateViewLabel;
+        }
+
+        void UpdateViewLabel(NumuFollowCamera.View v)
+        {
+            if (viewLabel != null) viewLabel.text = v == NumuFollowCamera.View.FirstPerson ? "First person" : "Third person";
         }
 
         public void Show(CanvasGroup g, bool visible, bool instant = false)
@@ -130,6 +158,7 @@ namespace Numu.World
         {
             Show(hudGroup, v);
             Show(joystickGroup, v && _joystickAllowed);
+            Show(lookAreaGroup, v);
         }
 
         /// <summary>Shows a subtitle line; continues on tap/Space or after a reading-time based delay.</summary>

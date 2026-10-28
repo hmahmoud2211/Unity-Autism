@@ -61,6 +61,13 @@ namespace Numu.EditorTools.World
                 }
                 c.Fill(p => IconCanvas.Segment(p, new Vector2(0.3f, 0.66f), new Vector2(0.18f, 0.5f), 0.045f), Color.white);
             });
+            Save("Glyph_View", c =>
+            {
+                // An eye: switch between seeing the child (third person) and seeing through their eyes.
+                c.Fill(p => Mathf.Max(IconCanvas.Circle(p, new Vector2(0.5f, 0.86f), 0.52f), IconCanvas.Circle(p, new Vector2(0.5f, 0.14f), 0.52f)), Color.white);
+                c.Fill(p => IconCanvas.Circle(p, new Vector2(0.5f, 0.5f), 0.17f), new Color(0.42f, 0.35f, 0.53f, 1f));
+                c.Fill(p => IconCanvas.Circle(p, new Vector2(0.5f, 0.5f), 0.08f), Color.white);
+            });
             Save("Feedback_Star", c =>
             {
                 var star = new Vector2[10];

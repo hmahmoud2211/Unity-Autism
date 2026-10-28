@@ -121,6 +121,15 @@ namespace Numu.EditorTools.World
             var ui = canvasGo.AddComponent<NumuWorldUI>();
             Color ink = NumuColor.Hex("#3d3350");
 
+            // Look area: drag on the right of the screen to turn the camera. First child, so every button is above it.
+            var look = Rect("Look Area", root, Vector2.zero, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            look.anchorMin = new Vector2(0.4f, 0f);
+            look.anchorMax = Vector2.one;
+            look.offsetMin = look.offsetMax = Vector2.zero;
+            Img(look, null, new Color(0, 0, 0, 0), true);
+            look.gameObject.AddComponent<NumuLookArea>();
+            ui.lookAreaGroup = Group(look);
+
             // HUD: Map button + world chip.
             var hud = Fill("HUD", root);
             ui.hudGroup = Group(hud);
@@ -130,6 +139,13 @@ namespace Numu.EditorTools.World
             Img(Rect("Icon", map, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(52, 52)), NumuWorldIcons.Sprite("Glyph_Map"), NumuColor.Hex("#6a5a86"));
             Text(Rect("Label", map, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(80, 0), new Vector2(110, 60)), "Map", 34, ink, true, TextAlignmentOptions.MidlineLeft);
             ui.mapButton = Btn(map, mapBg);
+            // View switch (third / first person).
+            var viewBtn = Rect("View Button", hud, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-28, -24), new Vector2(320, 84));
+            Shadow(viewBtn);
+            var viewBg = Img(Fill("Bg", viewBtn), UISprite("UI_Pill"), Color.white, true);
+            Img(Rect("Icon", viewBtn, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, 0), new Vector2(56, 56)), NumuWorldIcons.Sprite("Glyph_View"), NumuColor.Hex("#6a5a86"));
+            ui.viewLabel = Text(Rect("Label", viewBtn, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(84, 0), new Vector2(220, 60)), "Third person", 32, ink, true, TextAlignmentOptions.MidlineLeft);
+            ui.viewButton = Btn(viewBtn, viewBg);
             var chip = Rect("World Chip", hud, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -24), new Vector2(460, 84));
             Shadow(chip);
             Img(Fill("Bg", chip), UISprite("UI_Pill"), spec.chipBg);

@@ -40,6 +40,8 @@ namespace Numu.EditorTools.World
         /// <summary>Opens (or creates) the world scene, empties it and prepares a fresh root. Returns an error message or null.</summary>
         public string Begin()
         {
+            // Checked before anything is deleted: a build attempted in Play Mode must not touch any asset.
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return $"Aborted: exit Play Mode before building {Name}.";
             var active = SceneManager.GetActiveScene();
             if (active.isDirty && active.path != ScenePath) return $"Aborted: '{active.path}' has unsaved changes.";
             Directory.CreateDirectory(WorldDir);

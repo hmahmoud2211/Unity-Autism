@@ -74,6 +74,8 @@ namespace Numu.EditorTools.World
 
         static string BuildInternal(bool bake)
         {
+            // Checked before anything is deleted: a build attempted in Play Mode must not touch any asset.
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return "Aborted: exit Play Mode before building the Park.";
             var active = SceneManager.GetActiveScene();
             if (active.isDirty && active.path != ScenePath)
                 return $"Aborted: '{active.path}' has unsaved changes.";

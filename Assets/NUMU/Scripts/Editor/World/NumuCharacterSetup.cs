@@ -17,7 +17,7 @@ namespace Numu.EditorTools.World
     {
         const string AvatarRoot = "Assets/ThirdParty/Rocketbox/Avatars";
         const string AnimRoot = "Assets/ThirdParty/Rocketbox/Animations";
-        public const string Dir = "Assets/NUMU/Worlds/Characters";
+        public const string Dir = "Assets/NUMU/Characters";
 
         public static string PrefabPath(string avatar) => $"{Dir}/Char_{avatar}.prefab";
         public static GameObject Prefab(string avatar) => AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath(avatar));
@@ -62,8 +62,10 @@ namespace Numu.EditorTools.World
                 if (defaults.Length == 0) continue;
                 var c = defaults[0];
                 bool moving = name.Contains("walk") || name.Contains("run");
+                // Turns and sit-down/stand-up are one-shot transitions; their root motion is baked into the pose.
+                bool oneShot = name.Contains("_turn_") || name.Contains("sit_down") || name.Contains("stand_up");
                 c.name = name;
-                c.loopTime = true;
+                c.loopTime = !oneShot;
                 c.loopPose = !moving;
                 // Bake rotation and height into the pose; keep horizontal motion only for locomotion clips,
                 // which the controller drives in place (root motion is off).
@@ -151,6 +153,11 @@ namespace Numu.EditorTools.World
             State(ctrl, "HoldBag", Pick($"{g}_hold_bag_idle_01", $"{g}_idle_waiting_01"));
             State(ctrl, "Waiting", Pick($"{g}_idle_waiting_01"));
             State(ctrl, "Documents", Pick($"{g}_documents_idle", $"{g}_idle_waiting_01"));
+            // Transitions: stepping turns (played while the body is rotated in code) and sitting down / standing up.
+            State(ctrl, "TurnLeft", Pick($"{g}_turn_left_90"));
+            State(ctrl, "TurnRight", Pick($"{g}_turn_right_90"));
+            State(ctrl, "SitDown", Pick($"{g}_sit_down_chair_01"));
+            State(ctrl, "StandUp", Pick($"{g}_sit_stand_up_chair_01"));
             ctrl.layers[0].stateMachine.defaultState = idle;
             EditorUtility.SetDirty(ctrl);
             return ctrl;

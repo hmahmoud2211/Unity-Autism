@@ -8,7 +8,7 @@ Rebuilding regenerates the whole scene, prefabs, materials and baked lighting. E
 
 - **From the island map:** Park › Level 4 *Identify emotions* › Play. The level must be unlocked, i.e. levels 1–3 finished.
 - **Directly:** open `NUMU_Park.unity` and press Play.
-- **Controls:** WASD or arrow keys (Shift to walk faster), a gamepad stick, or the on-screen joystick on touch devices. Space, E, Enter or the prompt button interacts.
+- **Controls:** WASD or arrow keys (Shift to walk faster), a gamepad stick, or the on-screen joystick on touch devices. Space, E, Enter or the prompt button interacts. **V** or the view button switches between third and first person, and dragging on the right of the screen (or holding the right mouse button) looks around. See `CHARACTERS_AND_CAMERA.md`.
 
 ## The activity: "A happy child on a swing" (`park_swing_happy`)
 

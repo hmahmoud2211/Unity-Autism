@@ -62,6 +62,25 @@ namespace Numu.World
             Play(state, fade);
         }
 
+        /// <summary>
+        /// Turns the body to a new facing over <paramref name="seconds"/>, playing a stepping turn clip so the
+        /// feet move instead of sliding (the clip's own rotation is baked out; the body is rotated here).
+        /// </summary>
+        public System.Collections.IEnumerator TurnTo(Quaternion target, float seconds)
+        {
+            Quaternion from = transform.rotation;
+            float angle = Vector3.SignedAngle(transform.forward, target * Vector3.forward, Vector3.up);
+            bool step = Mathf.Abs(angle) > 25f && seconds > 0f;
+            if (step) Override(angle < 0f ? "TurnLeft" : "TurnRight", 0.15f);
+            for (float t = 0f; t < seconds; t += Time.deltaTime)
+            {
+                transform.rotation = Quaternion.Slerp(from, target, Mathf.SmoothStep(0f, 1f, t / seconds));
+                yield return null;
+            }
+            transform.rotation = target;
+            if (step) ReleaseOverride();
+        }
+
         public void ReleaseOverride()
         {
             _overridden = false;

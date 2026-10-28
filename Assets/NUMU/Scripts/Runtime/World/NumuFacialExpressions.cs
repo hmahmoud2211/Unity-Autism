@@ -87,7 +87,38 @@ namespace Numu.World
             // Allow presets to name a shape without its mesh prefix (e.g. "Blendshape.mouthSmile_L").
             foreach (var kv in _lookup)
                 if (kv.Key.EndsWith("." + shape, StringComparison.OrdinalIgnoreCase) || kv.Key.EndsWith("_" + shape, StringComparison.OrdinalIgnoreCase)) return kv.Value;
+            // Rocketbox-style ARKit names ("AK_44_MouthSmileLeft") also match faces that use the plain ARKit
+            // names ("mouthSmileLeft"), which most realistic character pipelines export.
+            string arkit = ArkitName(shape);
+            if (arkit != null)
+                foreach (var kv in _lookup)
+                    if (kv.Key.Equals(arkit, StringComparison.OrdinalIgnoreCase) || kv.Key.EndsWith("." + arkit, StringComparison.OrdinalIgnoreCase)) return kv.Value;
             return -1;
+        }
+
+        /// <summary>"AK_44_MouthSmileLeft" → "mouthSmileLeft"; null when the name isn't an ARKit preset name.</summary>
+        static string ArkitName(string shape)
+        {
+            if (!shape.StartsWith("AK_", StringComparison.Ordinal) || shape.Length < 7) return null;
+            int us = shape.IndexOf('_', 3);
+            if (us < 0 || us + 1 >= shape.Length) return null;
+            string n = shape.Substring(us + 1);
+            return char.ToLowerInvariant(n[0]) + n.Substring(1);
+        }
+
+        /// <summary>How many of the six emotions can be shown with this face's blendshapes (for asset validation).</summary>
+        public int SupportedEmotionCount()
+        {
+            Rebuild();
+            int count = 0;
+            foreach (var p in presets)
+            {
+                if (p.emotion == NumuEmotion.Neutral) { count++; continue; }
+                int found = 0;
+                foreach (var w in p.shapes) if (Index(w.shape) >= 0) found++;
+                if (p.shapes.Count > 0 && found >= Mathf.CeilToInt(p.shapes.Count * 0.5f)) count++;
+            }
+            return count;
         }
 
         public bool HasShapes => _cachedMesh != null && _cachedMesh.blendShapeCount > 0;

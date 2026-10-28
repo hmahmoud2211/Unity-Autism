@@ -26,8 +26,16 @@ namespace Numu.EditorTools.World
         public static string Report => _log.ToString();
         public static bool Done => _done;
 
-        public static string Start(string outDir)
+        static bool _walkFirstPerson;
+        static Vector3 _walkStart;
+
+        /// <param name="walkFirstPerson">
+        /// Walks in third person with the touch joystick, switches to first person, walks up to the character and
+        /// checks that first person is still active after the conversation (instead of placing the child directly).
+        /// </param>
+        public static string Start(string outDir, bool walkFirstPerson = false)
         {
+            _walkFirstPerson = walkFirstPerson;
             if (!Application.isPlaying) return "Not in Play Mode.";
             _out = outDir;
             Directory.CreateDirectory(outDir);
@@ -40,6 +48,7 @@ namespace Numu.EditorTools.World
             _lastQuestion = null;
             _started = EditorApplication.timeSinceStartup;
             _next = _started + 1.5;
+            if (walkFirstPerson) _phase = 10;
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
             return "started";
@@ -84,8 +93,57 @@ namespace Numu.EditorTools.World
             var followCamera = scenario != null ? scenario.followCamera : park.followCamera;
             var npc = scenario != null ? scenario.actors[0].npc.transform : park.npc.transform;
 
+            var view = followCamera;
             switch (_phase)
             {
+                case 10:
+                    Shot("tp_start");
+                    _walkStart = player.transform.position;
+                    Stick(player, new Vector2(0f, 1f));
+                    Log($"third person: {view.CurrentView}; walking forward with the touch joystick");
+                    _phase = 11;
+                    _next = now + 3.0;
+                    return;
+                case 11:
+                    Shot("tp_walking");
+                    var anim = player.GetComponent<Animator>();
+                    Log($"walked {Vector3.Distance(_walkStart, player.transform.position):F2} m at {player.CurrentSpeed:F2} m/s; animator Locomotion: {anim.GetCurrentAnimatorStateInfo(0).IsName("Locomotion")}, camera distance {Vector3.Distance(view.transform.position, player.transform.position):F2} m");
+                    Stick(player, Vector2.zero);
+                    view.ToggleView();
+                    Log($"pressed the view button → {view.CurrentView}");
+                    _phase = 12;
+                    _next = now + 1.5;
+                    return;
+                case 12:
+                    bool hidden = System.Array.TrueForAll(player.GetComponentsInChildren<Renderer>(), r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly);
+                    Log($"first person: camera {view.transform.position.y - player.transform.position.y:F2} m above the feet, body hidden (shadow only): {hidden}");
+                    Shot("fp_view");
+                    // Stand 5 m from the activity facing the character, then walk up in first person.
+                    var cc0 = player.GetComponent<CharacterController>();
+                    cc0.enabled = false;
+                    Vector3 spot = interactable.transform.position;
+                    Vector3 dir = Vector3.ProjectOnPlane(spot - npc.position, Vector3.up).normalized;
+                    Vector3 from = spot + dir * 3.5f;
+                    from.y = player.transform.position.y;
+                    player.transform.SetPositionAndRotation(from, Quaternion.LookRotation(-dir));
+                    cc0.enabled = true;
+                    view.SnapBehindTarget();
+                    Stick(player, new Vector2(0f, 0.55f));
+                    _phase = 13;
+                    _next = now + 0.3;
+                    return;
+                case 13:
+                    if (Visible(interactions.promptGroup) || now - _started > 40)
+                    {
+                        Stick(player, Vector2.zero);
+                        Log($"walked up in first person; prompt visible: {Visible(interactions.promptGroup)} at {Vector3.Distance(player.transform.position, npc.position):F2} m from the character");
+                        Shot("fp_approach");
+                        _phase = 1;
+                        _next = now + 1.0;
+                        return;
+                    }
+                    _next = now + 0.1;
+                    return;
                 case 0:
                     Shot("arrival");
                     // Walk-in is tested separately; here the child is placed beside the activity.
@@ -157,6 +215,12 @@ namespace Numu.EditorTools.World
             }
             if (_phase == 2 && player.InputEnabled && Visible(ui.hudGroup) && now - _started > 8)
             {
+                if (_walkFirstPerson)
+                {
+                    bool hidden = System.Array.TrueForAll(player.GetComponentsInChildren<Renderer>(), r => r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly);
+                    Log($"after the conversation: view {view.CurrentView}, first person active {view.IsFirstPerson}, body hidden {hidden}");
+                    if (!view.IsFirstPerson) { Finish("FAIL (view not preserved)"); return; }
+                }
                 Shot("free_play");
                 Log($"conversation finished; HUD back, input enabled. Toast: '{ui.toastText.text}'");
                 Finish("PASS");
@@ -164,6 +228,9 @@ namespace Numu.EditorTools.World
             }
             _next = now + 0.3;
         }
+
+        static void Stick(NumuPlayerController player, Vector2 v) =>
+            typeof(NumuVirtualJoystick).GetProperty("Value").SetValue(player.joystick, v);
 
         static void Finish(string result)
         {
