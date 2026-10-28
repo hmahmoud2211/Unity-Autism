@@ -14,5 +14,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Worlds/NUMU_Park.unity
     guid: 199c7eeb6560d41febc00d6372ff054a
+  - enabled: 1
+    path: Assets/Scenes/Worlds/NUMU_Home.unity
+    guid: 2d29bd04bd38945619d45921b9aed637
+  - enabled: 1
+    path: Assets/Scenes/Worlds/NUMU_School.unity
+    guid: 479ead3702e4d402485c9006c84fffa4
+  - enabled: 1
+    path: Assets/Scenes/Worlds/NUMU_Supermarket.unity
+    guid: c09cb2e4bca2143c8b6a080dae6ca7d4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

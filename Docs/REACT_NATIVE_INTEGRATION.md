@@ -9,7 +9,7 @@ Nothing below has been run on an Android or iOS device.
 |---|---|---|
 | Bridge component (auto-created, survives scene loads) | `Assets/NUMU/Scripts/Runtime/World/NumuBridge.cs` | Receives host messages, sends results back |
 | Session model | `NumuSessionInfo` / `NumuSession` (same file) | Player/session info passed in by the host |
-| Scene routing | `NumuSceneRouter` (same file) | `OpenWorld("park", "park_swing_happy")`, `ReturnToMap()` |
+| Scene routing | `NumuSceneRouter` (same file) | `OpenWorld("home", "home_mum_sad")`, `ReturnToMap()` |
 | Results store | `Assets/NUMU/Scripts/Runtime/World/NumuAssessment.cs` | Writes `numu_assessment_results.json` in `persistentDataPath` and forwards each result to the host |
 | Android plugin | `Assets/Plugins/Android/NumuUnityBridge.java` | `com.numu.unity.NumuUnityBridge.setListener(...)` |
 | iOS plugin | `Assets/Plugins/iOS/NumuBridge.mm` | `NumuRegisterHostHandler(...)` C function |
@@ -21,7 +21,7 @@ Nothing below has been run on an Android or iOS device.
 | Method | Payload | Effect |
 |---|---|---|
 | `StartSession` | `{"sessionId":"…","playerId":"child-123","childName":"Sara","language":"en","reducedMotion":false,"soundOn":true,"world":"park","scenario":"park_swing_happy"}` | Stores the session, applies comfort settings, optionally opens a world |
-| `OpenWorld` | `{"world":"park","scenario":"park_swing_happy"}` | Loads that world (only `park` exists today) |
+| `OpenWorld` | `{"world":"park","scenario":"park_swing_happy"}` | Loads that world. Worlds and activities: `park`/`park_swing_happy`, `home`/`home_mum_sad`, `school`/`school_lina_nervous`, `supermarket`/`market_checkout` |
 | `ExitGame` | `""` | Sends `exit`, then unloads Unity (`Application.Unload`) |
 
 ### Unity → Host (JSON envelope `{"type": "...", "payload": "<json string>"}`)
@@ -32,7 +32,7 @@ Nothing below has been run on an Android or iOS device.
 | `sessionStarted` | after `StartSession` | the session object |
 | `worldOpened` | a world starts loading | `{"world":"park","scenario":"park_swing_happy"}` |
 | `assessmentResult` | **every answered question** | `{sessionId, playerId, world, scenarioId, question, correctAnswer, selectedAnswer, isCorrect, attempt, responseTimeMs, answeredAtUtc, reducedMotion}` |
-| `scenarioFinished` | activity complete | `{"scenario":"park_swing_happy","attempts":2}` |
+| `scenarioFinished` | activity complete | Park: `{"scenario":"park_swing_happy","attempts":2}`; indoor worlds: `{"scenario":"home_mum_sad","attempts":4,"questions":2,"solved":2}` |
 | `exit` | child leaves (Map button or `ExitGame`) | `{}` |
 | `error` | unknown world requested | `{"world":"…"}` |
 

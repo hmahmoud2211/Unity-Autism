@@ -112,6 +112,14 @@ namespace Numu.EditorTools.World
             return s;
         }
 
+        /// <summary>First clip that exists out of the candidates.</summary>
+        static string Pick(params string[] candidates)
+        {
+            foreach (var c in candidates)
+                if (File.Exists($"{AnimRoot}/{c}.fbx")) return c;
+            return candidates[0];
+        }
+
         static AnimatorController BuildNpcController(string name, string g)
         {
             var ctrl = NewController(name);
@@ -127,6 +135,22 @@ namespace Numu.EditorTools.World
             State(ctrl, "Talk", g == "f" ? "f_gestic_talk_excited_01" : "m_gestic_talk_neutral_01");
             State(ctrl, "Listen", g == "f" ? "f_gestic_listen_neutral_01" : "m_gestic_listen_relaxed_01");
             State(ctrl, "LookAround", g == "f" ? "f_idle_look_around_01" : "m_idle_breathe_01");
+            // Indoor worlds. Where a clip only exists for one gender, the closest available clip stands in.
+            State(ctrl, "SitTable", Pick($"{g}_sit_table_idle_neutral_01"));
+            State(ctrl, "SitTableRelaxed", Pick($"{g}_sit_table_idle_relaxed_01", $"{g}_sit_table_idle_neutral_01"));
+            State(ctrl, "SitTableThink", Pick($"{g}_sit_table_gestic_thoughtful", $"{g}_sit_table_idle_neutral_01"));
+            State(ctrl, "TalkSad", Pick($"{g}_gestic_talk_sad_01"));
+            State(ctrl, "ListenSad", Pick($"{g}_gestic_listen_sad_01", $"{g}_gestic_talk_sad_01"));
+            State(ctrl, "Nervous", Pick($"{g}_idle_nervous_01", $"{g}_idle_waiting_01"));
+            State(ctrl, "TalkNervous", Pick($"{g}_gestic_talk_nervous_01", $"{g}_gestic_talk_neutral_01"));
+            State(ctrl, "Angry", Pick($"{g}_idle_angry_01", $"{g}_idle_waiting_01"));
+            State(ctrl, "TalkAngry", Pick($"{g}_idle_angry_02", $"{g}_gestic_talk_excited_01"));
+            State(ctrl, "Teach", Pick($"{g}_gestic_talk_neutral_02", $"{g}_gestic_talk_neutral_01"));
+            State(ctrl, "Nod", Pick($"{g}_gestic_listen_accept_01"));
+            State(ctrl, "Trolley", Pick($"{g}_trolley_idle"));
+            State(ctrl, "HoldBag", Pick($"{g}_hold_bag_idle_01", $"{g}_idle_waiting_01"));
+            State(ctrl, "Waiting", Pick($"{g}_idle_waiting_01"));
+            State(ctrl, "Documents", Pick($"{g}_documents_idle", $"{g}_idle_waiting_01"));
             ctrl.layers[0].stateMachine.defaultState = idle;
             EditorUtility.SetDirty(ctrl);
             return ctrl;

@@ -1,4 +1,5 @@
-"""Downloads the free (MIT / CC0) source assets for the NUMU Park World into a staging folder.
+"""Downloads the free (MIT / CC0) source assets for the NUMU realistic worlds (Park, Home, School, Supermarket)
+into a staging folder. Files that are already staged are skipped, so re-running only fetches what is new.
 
 Usage: python3 -I download_assets.py <staging_dir>
 """
@@ -44,6 +45,9 @@ def rocketbox():
     avatars = [
         ("Children", "Female_Child_01"), ("Children", "Male_Child_01"), ("Children", "Female_Child_02"), ("Children", "Male_Child_02"),
         ("Adults", "Female_Adult_01"), ("Adults", "Male_Adult_02"),
+        # Home: Mum and Dad. School: the teacher. Supermarket: the cashier and a shopper.
+        ("Adults", "Female_Adult_06"), ("Adults", "Male_Adult_08"), ("Adults", "Female_Adult_14"), ("Adults", "Female_Adult_12"),
+        ("Adults", "Male_Adult_13"),
     ]
     for group, name in avatars:
         base = f"Rocketbox/Avatars/{name}"
@@ -54,7 +58,13 @@ def rocketbox():
         print("rocketbox avatar", name)
     static = ["f_idle_neutral_01", "m_idle_neutral_01", "f_sit_chair_idle_neutral_01", "m_sit_chair_idle_neutral_01", "f_wave_01", "m_wave_01",
               "f_gestic_laugh_low", "f_cheer_01", "m_cheer_01", "f_claphands_01", "f_gestic_talk_excited_01", "m_gestic_talk_neutral_01",
-              "f_gestic_listen_neutral_01", "m_gestic_listen_relaxed_01", "f_idle_look_around_01", "m_idle_breathe_01"]
+              "f_gestic_listen_neutral_01", "m_gestic_listen_relaxed_01", "f_idle_look_around_01", "m_idle_breathe_01",
+              # Indoor worlds: sitting at tables/desks, emotional body language, shopping and teaching.
+              "f_sit_table_idle_neutral_01", "m_sit_table_idle_neutral_01", "f_sit_table_idle_relaxed_01", "m_sit_table_idle_relaxed_01",
+              "f_sit_table_gestic_thoughtful", "m_sit_table_gestic_thoughtful", "f_gestic_talk_sad_01", "m_gestic_talk_sad_01",
+              "f_gestic_listen_sad_01", "f_gestic_talk_nervous_01", "f_idle_nervous_01", "m_idle_angry_01", "m_idle_angry_02",
+              "f_gestic_talk_neutral_02", "f_gestic_listen_accept_01", "m_gestic_listen_accept_01", "f_trolley_idle", "m_trolley_idle",
+              "f_hold_bag_idle_01", "f_idle_waiting_01", "m_idle_waiting_01", "f_documents_idle"]
     moving = ["f_walk_neutral_01", "m_walk_neutral_01", "f_run_slow_01", "m_run_slow_01"]
     for a in static:
         fetch(f"{RB}/Animations/all_animations_max_motextr_static/{a}.max.fbx", f"{STAGE}/Rocketbox/Animations/{a}.fbx")
@@ -64,12 +74,29 @@ def rocketbox():
     print("rocketbox animations", len(static) + len(moving))
 
 
+PH_PARK = ["painted_wooden_bench", "street_lamp_02", "metal_trash_can", "wooden_picnic_table", "shrub_03", "shrub_04", "fern_02",
+           "football", "planter_box_01", "flower_gazania"]
+PH_HOME = ["Sofa_01", "modern_arm_chair_01", "coffee_table_round_01", "modern_wooden_cabinet", "round_wooden_table_01", "dining_chair_02",
+           "wooden_display_shelves_01", "drawer_cabinet", "potted_plant_01", "potted_plant_02", "potted_plant_04", "throw_pillows_01",
+           "hanging_picture_frame_02", "standing_picture_frame_01", "wall_clock", "modern_ceiling_lamp_01", "electric_stove",
+           "vintage_electric_kettle", "tea_set_01", "wooden_bowl_01", "wooden_cutting_board", "rubber_duck_toy",
+           "chess_set", "ceramic_vase_01"]
+PH_SCHOOL = ["SchoolDesk_01", "SchoolChair_01", "metal_office_desk", "steel_frame_shelves_01", "book_encyclopedia_set_01", "binder_notebook",
+             "stationery_supplies", "standing_chalkboard_01", "mounted_fluorescent_lights", "wicker_basket_01"]
+PH_MARKET = ["wooden_crate_01", "plastic_crate_01", "cardboard_box_01", "long_life_food", "bananas", "food_apple_01", "lemon",
+             "food_avocado_01", "food_kiwi_01", "yellow_onion", "sweet_potato", "food_pears_asian_01", "hamburger_buns"]
+
+
 def polyhaven():
-    models = ["painted_wooden_bench", "street_lamp_02", "metal_trash_can", "wooden_picnic_table", "shrub_03", "shrub_04", "fern_02",
-              "football", "planter_box_01", "flower_gazania"]
+    models = PH_PARK + PH_HOME + PH_SCHOOL + PH_MARKET
     for m in models:
         files = get_json(f"https://api.polyhaven.com/files/{m}")
-        entry = files["fbx"]["1k"]["fbx"]
+        fbx = files.get("fbx", {})
+        res = next((r for r in ("1k", "2k") if r in fbx), None)
+        if res is None:
+            print("  skipped (no FBX download):", m)
+            continue
+        entry = fbx[res]["fbx"]
         fetch(entry["url"], f"{STAGE}/PolyHaven/{m}/{m}.fbx")
         for rel, inc in entry.get("include", {}).items():
             fetch(inc["url"], f"{STAGE}/PolyHaven/{m}/{rel}")
@@ -80,7 +107,11 @@ def polyhaven():
 
 
 def ambientcg():
-    for tex in ["Grass004", "PavingStones138", "Ground054", "Rubber004", "Bark006", "Bark012", "Leaf001"]:
+    park = ["Grass004", "PavingStones138", "Ground054", "Rubber004", "Bark006", "Bark012", "Leaf001"]
+    # Interiors: floors, walls, worktops, upholstery and metal.
+    interiors = ["WoodFloor051", "PaintedPlaster017", "Plaster001", "Tiles107", "Tiles040", "Terrazzo005", "Carpet016", "Carpet012",
+                 "Fabric030", "Marble012", "Wood049", "Wood051", "Metal032", "Plastic010"]
+    for tex in park + interiors:
         z = fetch(f"https://ambientcg.com/get?file={tex}_1K-JPG.zip", f"{STAGE}/ambientCG/{tex}_1K-JPG.zip")
         out = f"{STAGE}/ambientCG/{tex}"
         os.makedirs(out, exist_ok=True)

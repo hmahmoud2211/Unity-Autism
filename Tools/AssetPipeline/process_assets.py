@@ -22,6 +22,11 @@ def ensure(path):
     return path
 
 
+def done(path):
+    """Outputs that already exist are kept, so re-running only processes newly staged assets."""
+    return os.path.exists(path) and os.path.getsize(path) > 0
+
+
 def save_png(img, path, size=None):
     if size and max(img.size) > size:
         img = img.resize((size, size), Image.LANCZOS)
@@ -36,9 +41,12 @@ def rocketbox():
         name = os.path.basename(avatar_dir)
         out = ensure(os.path.join(out_root, "Avatars", name))
         tex_out = ensure(os.path.join(out, "Textures"))
-        shutil.copy(os.path.join(avatar_dir, f"{name}_facial.fbx"), os.path.join(out, f"{name}_facial.fbx"))
+        if not done(os.path.join(out, f"{name}_facial.fbx")):
+            shutil.copy(os.path.join(avatar_dir, f"{name}_facial.fbx"), os.path.join(out, f"{name}_facial.fbx"))
         for tga in sorted(glob.glob(os.path.join(avatar_dir, "Textures", "*.tga"))):
             base = os.path.splitext(os.path.basename(tga))[0]
+            if done(os.path.join(tex_out, base.replace("_specular", "_mask") + ".png")):
+                continue
             img = Image.open(tga)
             if base.endswith("_specular"):
                 # URP Lit "metallic + smoothness" mask: metal 0, smoothness from the specular level.
@@ -56,7 +64,8 @@ def rocketbox():
         print("rocketbox", name)
     anim_out = ensure(os.path.join(out_root, "Animations"))
     for fbx in glob.glob(os.path.join(STAGE, "Rocketbox", "Animations", "*.fbx")):
-        shutil.copy(fbx, anim_out)
+        if not done(os.path.join(anim_out, os.path.basename(fbx))):
+            shutil.copy(fbx, anim_out)
     print("rocketbox animations copied")
 
 
@@ -68,7 +77,8 @@ def polyhaven():
         if name == "HDRI":
             hdr_out = ensure(os.path.join(out_root, "HDRI"))
             for f in glob.glob(os.path.join(model_dir, "*.hdr")):
-                shutil.copy(f, hdr_out)
+                if not done(os.path.join(hdr_out, os.path.basename(f))):
+                    shutil.copy(f, hdr_out)
             continue
         out = ensure(os.path.join(out_root, "Models", name))
         for dp, _, files in os.walk(model_dir):
@@ -80,6 +90,8 @@ def polyhaven():
                 dst = os.path.join(out, rel)
                 ensure(os.path.dirname(dst))
                 alpha = src.replace("_diff_", "_alpha_").rsplit(".", 1)[0] + ".png"
+                if done(dst) or done(dst.rsplit(".", 1)[0] + ".png") and "_diff_" in f and os.path.exists(alpha):
+                    continue
                 if "_diff_" in f and os.path.exists(alpha):
                     # Foliage: fold the separate alpha mask into the colour map for alpha clipping.
                     c = Image.open(src).convert("RGBA")
@@ -104,6 +116,8 @@ def ambientcg():
         if not os.path.isdir(folder):
             continue
         name = os.path.basename(folder)
+        if done(os.path.join(out_root, name, f"{name}_Color.png")):
+            continue
         out = ensure(os.path.join(out_root, name))
         color = find(folder, "Color")
         normal = find(folder, "NormalGL")
@@ -134,6 +148,8 @@ def ambientcg():
 
 # ------------------------------------------------------------------ generated foliage atlases
 def leaf_cluster():
+    if done(os.path.join(GEN, "LeafCluster_Color.png")):
+        return
     folder = os.path.join(STAGE, "ambientCG", "Leaf001")
     color = Image.open(find(folder, "Color")).convert("RGB")
     alpha = Image.open(find(folder, "Opacity")).convert("L").resize(color.size)
@@ -199,6 +215,8 @@ def leaf_cluster():
 
 
 def grass_blades():
+    if done(os.path.join(GEN, "GrassBlades_Color.png")):
+        return
     rng = random.Random(11)
     size = 512
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))

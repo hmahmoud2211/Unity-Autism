@@ -9,6 +9,12 @@ namespace Numu.EditorTools.World
     /// </summary>
     public class NumuAssetImportRules : AssetPostprocessor
     {
+        static readonly string[] LightmappedProps =
+        {
+            "bench", "picnic", "planter", "trash_can", "street_lamp", "sofa", "chair", "desk", "shelves", "drawer_cabinet",
+            "crate", "cardboard_box", "chalkboard", "coffee_table", "dining_table", "round_wooden_table",
+        };
+
         static bool Managed(string path) =>
             path.StartsWith("Assets/ThirdParty/") || path.StartsWith("Assets/NUMU/Worlds/");
 
@@ -79,10 +85,14 @@ namespace Numu.EditorTools.World
             }
             else
             {
-                // Foliage is lit by light probes, so it never needs (tiny, unpackable) lightmap UVs.
-                string lowerPath = assetPath.ToLowerInvariant();
-                bool foliage = lowerPath.Contains("shrub") || lowerPath.Contains("fern") || lowerPath.Contains("flower") || lowerPath.Contains("grass");
-                mi.generateSecondaryUV = !foliage;
+                // Only large, simple furniture gets lightmap UVs. Small or many-part props (food, tableware, dials,
+                // chess pieces, foliage) can't be packed: Unity then empties the mesh. They light from probes instead.
+                string file = System.IO.Path.GetFileNameWithoutExtension(assetPath).ToLowerInvariant();
+                mi.generateSecondaryUV = System.Array.Exists(LightmappedProps, k => file.Contains(k));
+                // Scanned props are dense (some 20-70k triangles): Unity Mesh LOD simplifies them with screen size.
+                // Alpha-card foliage keeps its hand-made LODs.
+                bool foliage = file.Contains("shrub") || file.Contains("fern") || file.Contains("flower") || file.Contains("grass");
+                mi.generateMeshLods = !foliage;
                 mi.animationType = ModelImporterAnimationType.None;
                 mi.importAnimation = false;
                 mi.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;

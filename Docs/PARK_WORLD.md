@@ -37,7 +37,9 @@ Results are saved to `numu_assessment_results.json` (in `Application.persistentD
 | Activity | `NumuEmotionScenario.cs`, `NumuWorldUI.cs`, `NumuAssessment.cs`, `NumuScenarioCatalog.cs` |
 | Host bridge | `NumuBridge.cs`, `Assets/Plugins/Android|iOS` |
 | Rendering | `NumuWorldRenderSettings.cs` (per-tier shadow distance, cascades and resolution) |
-| Builders (Editor) | `Scripts/Editor/World/NumuParkBuilder*.cs`, `NumuCharacterSetup.cs`, `NumuPolyHavenSetup.cs`, `NumuWorldMaterials.cs`, `NumuAssetImportRules.cs` |
+| Builders (Editor) | `Scripts/Editor/World/NumuParkBuilder*.cs`, `NumuWorldUIBuilder.cs` (UI, shared with the indoor worlds), `NumuCharacterSetup.cs`, `NumuPolyHavenSetup.cs`, `NumuWorldMaterials.cs`, `NumuAssetImportRules.cs` |
+
+The Home, School and Supermarket worlds are described in `INDOOR_WORLDS.md`.
 
 ## Facial expressions
 

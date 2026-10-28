@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace Numu.World
 {
     /// <summary>
-    /// In-world interface: speech subtitles, the emotion question, gentle feedback and the HUD.
+    /// In-world interface: speech subtitles, the emotion question (or a picture-choice question), gentle feedback and the HUD.
     /// Layouts are built by the scene builder; this component only drives them.
     /// </summary>
     public class NumuWorldUI : MonoBehaviour
@@ -51,8 +51,18 @@ namespace Numu.World
         public TMP_Text toastText;
         public CanvasGroup joystickGroup;
 
+        /// <summary>A picture option for <see cref="AskChoice"/>; it temporarily replaces an emotion card.</summary>
+        public struct Option
+        {
+            public string label;
+            public Sprite icon;
+            public Color color;
+        }
+
         bool _continuePressed;
         NumuEmotion? _answer;
+        int _picked = -1;
+        (string label, Sprite icon, Color color)[] _emotionLooks;
         bool? _retryChoice;
         float _toastTimer;
         readonly Dictionary<CanvasGroup, float> _targets = new Dictionary<CanvasGroup, float>();
@@ -64,10 +74,18 @@ namespace Numu.World
             dialogueContinue.onClick.AddListener(() => _continuePressed = true);
             feedbackContinue.onClick.AddListener(() => _retryChoice = false);
             feedbackRetry.onClick.AddListener(() => _retryChoice = true);
-            foreach (var c in choices)
+            _emotionLooks = new (string, Sprite, Color)[choices.Count];
+            for (int i = 0; i < choices.Count; i++)
             {
+                var c = choices[i];
                 var e = c.emotion;
-                c.button.onClick.AddListener(() => _answer = e);
+                int index = i;
+                c.button.onClick.AddListener(() =>
+                {
+                    _answer = e;
+                    _picked = index;
+                });
+                _emotionLooks[i] = (c.label.text, c.icon.sprite, c.button.targetGraphic.color);
             }
             mapButton.onClick.AddListener(() =>
             {
@@ -133,9 +151,21 @@ namespace Numu.World
             yield return new WaitForSecondsRealtime(0.25f);
         }
 
+        void SetCard(int i, string label, Sprite icon, Color color)
+        {
+            choices[i].label.text = label;
+            choices[i].icon.sprite = icon;
+            choices[i].button.targetGraphic.color = color;
+        }
+
         /// <summary>Asks a question and reports the chosen emotion plus the response time in milliseconds.</summary>
         public IEnumerator Ask(string question, Action<NumuEmotion, long> onAnswer)
         {
+            for (int i = 0; i < choices.Count; i++)
+            {
+                choices[i].button.gameObject.SetActive(true);
+                SetCard(i, _emotionLooks[i].label, _emotionLooks[i].icon, _emotionLooks[i].color);
+            }
             questionText.text = question;
             _answer = null;
             Show(questionGroup, true);
@@ -144,6 +174,28 @@ namespace Numu.World
             long ms = (long)((Time.realtimeSinceStartup - start) * 1000f);
             Show(questionGroup, false);
             onAnswer(_answer.Value, ms);
+        }
+
+        /// <summary>
+        /// Asks a picture-choice question (e.g. "What could you do?") on the same cards as the emotion question.
+        /// Reports the chosen option index and the response time in milliseconds.
+        /// </summary>
+        public IEnumerator AskChoice(string question, IList<Option> options, Action<int, long> onAnswer)
+        {
+            for (int i = 0; i < choices.Count; i++)
+            {
+                bool used = i < options.Count;
+                choices[i].button.gameObject.SetActive(used);
+                if (used) SetCard(i, options[i].label, options[i].icon, options[i].color);
+            }
+            questionText.text = question;
+            _picked = -1;
+            Show(questionGroup, true);
+            float start = Time.realtimeSinceStartup;
+            while (_picked < 0) yield return null;
+            long ms = (long)((Time.realtimeSinceStartup - start) * 1000f);
+            Show(questionGroup, false);
+            onAnswer(_picked, ms);
         }
 
         public IEnumerator Feedback(bool positive, string title, string message, bool offerRetry, Action<bool> onDone)

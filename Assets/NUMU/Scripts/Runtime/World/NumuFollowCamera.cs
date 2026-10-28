@@ -36,6 +36,14 @@ namespace Numu.World
             transform.rotation = Quaternion.LookRotation(_smoothedLook - transform.position);
         }
 
+        /// <summary>Re-aims behind the target's current facing and jumps there (after a teleport or respawn).</summary>
+        public void SnapBehindTarget()
+        {
+            if (target == null) return;
+            _yaw = target.eulerAngles.y;
+            SnapToTarget();
+        }
+
         /// <summary>Moves the camera to a framed shot (e.g. a close-up on a face).</summary>
         public void SetShot(Vector3 position, Vector3 lookAt)
         {

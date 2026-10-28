@@ -25,6 +25,8 @@ namespace Numu.EditorTools.World
             public bool doubleSided;
             public bool receiveShadows = true;
             public Color emission = Color.black;
+            /// <summary>Alpha-blended surface (glass); <see cref="color"/>'s alpha sets the opacity.</summary>
+            public bool transparent;
         }
 
         public static Material Lit(string name, Spec s)
@@ -64,8 +66,16 @@ namespace Numu.EditorTools.World
             m.SetFloat("_AlphaClip", s.alphaClip ? 1f : 0f);
             m.SetFloat("_Cutoff", s.cutoff);
             SetKeyword(m, "_ALPHATEST_ON", s.alphaClip);
-            m.SetOverrideTag("RenderType", s.alphaClip ? "TransparentCutout" : "Opaque");
-            m.renderQueue = s.alphaClip ? (int)RenderQueue.AlphaTest : (int)RenderQueue.Geometry;
+            m.SetOverrideTag("RenderType", s.transparent ? "Transparent" : s.alphaClip ? "TransparentCutout" : "Opaque");
+            m.renderQueue = s.transparent ? (int)RenderQueue.Transparent : s.alphaClip ? (int)RenderQueue.AlphaTest : (int)RenderQueue.Geometry;
+            m.SetFloat("_Surface", s.transparent ? 1f : 0f);
+            m.SetFloat("_Blend", 0f);
+            m.SetFloat("_SrcBlend", s.transparent ? (float)BlendMode.SrcAlpha : (float)BlendMode.One);
+            m.SetFloat("_DstBlend", s.transparent ? (float)BlendMode.OneMinusSrcAlpha : (float)BlendMode.Zero);
+            m.SetFloat("_SrcBlendAlpha", s.transparent ? (float)BlendMode.One : (float)BlendMode.One);
+            m.SetFloat("_DstBlendAlpha", s.transparent ? (float)BlendMode.OneMinusSrcAlpha : (float)BlendMode.Zero);
+            m.SetFloat("_ZWrite", s.transparent ? 0f : 1f);
+            SetKeyword(m, "_SURFACE_TYPE_TRANSPARENT", s.transparent);
 
             m.SetFloat("_Cull", s.doubleSided ? (float)CullMode.Off : (float)CullMode.Back);
             m.doubleSidedGI = s.doubleSided;

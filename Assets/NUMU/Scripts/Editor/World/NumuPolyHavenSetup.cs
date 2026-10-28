@@ -40,6 +40,18 @@ namespace Numu.EditorTools.World
             { "fern_02", new[] { ("a", new[] { "fern_02_a" }), ("b", new[] { "fern_02_b" }), ("c", new[] { "fern_02_c" }), ("d", new[] { "fern_02_d" }) } },
             { "football", new[] { ("ball", new[] { "football_inflated" }) } },
             { "metal_trash_can", new[] { ("bin", new[] { "metal_trash_can", "metal_trash_can_handle_left", "metal_trash_can_handle_right" }) } },
+            // Indoor worlds: only the pieces that are placed (the full packs are heavy for mobile).
+            { "tea_set_01", new[] { ("teapot", new[] { "tea_set_01_teapot_01", "tea_set_01_teapot_01_lid" }), ("cup", new[] { "tea_set_01_cup_small_01", "tea_set_01_saucer_circular_03" }) } },
+            { "book_encyclopedia_set_01", new[] { ("row", new[] { "book_encyclopedia_set_01_book01", "book_encyclopedia_set_01_book02", "book_encyclopedia_set_01_book03",
+                "book_encyclopedia_set_01_book04", "book_encyclopedia_set_01_book05", "book_encyclopedia_set_01_book06" }) } },
+            { "bananas", new[] { ("bunch", new[] { "bananas_bunch" }) } },
+            { "long_life_food", new[] { ("beans", new[] { "long_life_food_beans" }), ("milk", new[] { "long_life_food_milk" }),
+                ("sardines", new[] { "long_life_food_sardines" }), ("tomatoes", new[] { "long_life_food_tomatoes" }) } },
+            { "binder_notebook", new[] { ("closed", new[] { "binder_notebook_closed" }) } },
+            { "mounted_fluorescent_lights", new[] { ("a", new[] { "mounted_fluorescent_lights_a" }) } },
+            { "wooden_crate_01", new[] { ("open", new[] { "wooden_crate_01" }) } },
+            { "food_pears_asian_01", new[] { ("a", new[] { "food_pears_asian_01_a" }) } },
+            { "hamburger_buns", new[] { ("one", new[] { "hamburger_buns_01" }) } },
         };
 
         static readonly string[] Foliage = { "shrub", "fern", "flower", "grass", "plant" };
@@ -143,6 +155,14 @@ namespace Numu.EditorTools.World
             inst.transform.SetParent(root.transform, true);
             // FBX files with _LODn meshes come with Unity's auto-generated LODGroup; ours replaces it.
             foreach (var existing in inst.GetComponentsInChildren<LODGroup>()) Object.DestroyImmediate(existing);
+            // Some files carry helper curves or parts that import as empty meshes; the GPU Resident Drawer
+            // rejects renderers with no geometry, so they are dropped.
+            foreach (var mf in inst.GetComponentsInChildren<MeshFilter>())
+                if (mf.sharedMesh == null || mf.sharedMesh.vertexCount == 0)
+                {
+                    Object.DestroyImmediate(mf.GetComponent<MeshRenderer>());
+                    Object.DestroyImmediate(mf);
+                }
             if (keepChildren != null)
                 for (int i = inst.transform.childCount - 1; i >= 0; i--)
                 {
@@ -177,7 +197,10 @@ namespace Numu.EditorTools.World
                 // Small foliage doesn't need to cast shadows (big win on mobile); props and furniture do.
                 r.shadowCastingMode = foliage ? UnityEngine.Rendering.ShadowCastingMode.Off : UnityEngine.Rendering.ShadowCastingMode.On;
                 // Foliage and small parts (handles, bulbs) light from probes rather than tiny lightmap charts.
-                if (foliage || r.bounds.size.magnitude < 0.45f) r.receiveGI = ReceiveGI.LightProbes;
+                // Meshes whose lightmap UVs could not be generated (many tiny islands) must use probes too.
+                var mf = r.GetComponent<MeshFilter>();
+                bool hasUV2 = mf != null && mf.sharedMesh != null && mf.sharedMesh.uv2 != null && mf.sharedMesh.uv2.Length > 0;
+                if (foliage || r.bounds.size.magnitude < 0.45f || !hasUV2) r.receiveGI = ReceiveGI.LightProbes;
             }
             inst.transform.position += new Vector3(-b.center.x, -b.min.y, -b.center.z);
             var group = root.AddComponent<LODGroup>();

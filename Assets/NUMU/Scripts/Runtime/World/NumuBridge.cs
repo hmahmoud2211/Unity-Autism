@@ -132,18 +132,30 @@ namespace Numu.World
     {
         public const string MapScene = "NUMU_World";
         public const string ParkScene = "NUMU_Park";
+        public const string HomeScene = "NUMU_Home";
+        public const string SchoolScene = "NUMU_School";
+        public const string SupermarketScene = "NUMU_Supermarket";
 
         /// <summary>Scenario requested for the next world load (read by the world's scenario controllers).</summary>
         public static string PendingScenario { get; private set; }
 
-        public static void OpenWorld(string world, string scenario = null)
+        /// <summary>Map level that launched the world (0 when opened directly or by the host without one).</summary>
+        public static int PendingLevel { get; private set; }
+
+        public static string SceneFor(string world) => world?.ToLowerInvariant() switch
+        {
+            "park" => ParkScene,
+            "home" => HomeScene,
+            "school" => SchoolScene,
+            "supermarket" => SupermarketScene,
+            _ => null,
+        };
+
+        public static void OpenWorld(string world, string scenario = null, int level = 0)
         {
             PendingScenario = scenario;
-            string scene = world?.ToLowerInvariant() switch
-            {
-                "park" => ParkScene,
-                _ => null,
-            };
+            PendingLevel = level;
+            string scene = SceneFor(world);
             if (scene == null)
             {
                 Debug.LogWarning($"[NUMU] World '{world}' has no realistic scene yet.");

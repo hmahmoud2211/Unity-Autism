@@ -300,7 +300,7 @@ namespace Numu
             string scenario = World.NumuScenarioCatalog.ScenarioFor(_island, _level);
             if (scenario != null)
             {
-                World.NumuSceneRouter.OpenWorld(_island, scenario);
+                World.NumuSceneRouter.OpenWorld(_island, scenario, _level);
                 return;
             }
             ShowToast($"“{info.Levels[_level - 1]}” is coming soon!");

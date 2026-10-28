@@ -78,6 +78,8 @@ namespace Numu.EditorTools.World
                     IconCanvas.Polygon(p, IconCanvas.V(0.2f, 0.47f, 0.8f, 0.47f, 0.5f, 0.84f))), NumuColor.Hex("#ff8fb1"));
             });
 
+            ChoiceIcons(Save);
+
             AssetDatabase.Refresh();
             foreach (var p in paths)
             {
@@ -87,6 +89,111 @@ namespace Numu.EditorTools.World
                 ti.mipmapEnabled = false;
                 ti.SaveAndReimport();
             }
+        }
+
+        static readonly Color Hand = NumuColor.Hex("#f5c08f");
+        static readonly Color HandEdge = NumuColor.Hex("#d99a68");
+
+        /// <summary>Pictures for "What could you do?" answers: one simple, literal symbol each.</summary>
+        static void ChoiceIcons(System.Action<string, System.Action<IconCanvas>, int> save)
+        {
+            void Save(string n, System.Action<IconCanvas> draw) => save(n, draw, 256);
+            Color pink = NumuColor.Hex("#ff7aa2"), blue = NumuColor.Hex("#5aa0e6"), grey = NumuColor.Hex("#9a96a8"), red = NumuColor.Hex("#ef5a4c");
+
+            Save("Choice_Hug", c =>
+            {
+                c.Fill(p => Mathf.Min(Mathf.Min(IconCanvas.Circle(p, new Vector2(0.39f, 0.42f), 0.15f), IconCanvas.Circle(p, new Vector2(0.61f, 0.42f), 0.15f)),
+                    IconCanvas.Polygon(p, IconCanvas.V(0.25f, 0.48f, 0.75f, 0.48f, 0.5f, 0.8f))), pink);
+                // Two arms wrapping around the heart.
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    c.Fill(p => Mathf.Max(IconCanvas.Ring(p, new Vector2(0.5f, 0.52f), 0.33f, 0.07f), s * (0.5f - p.x) + 0.02f), HandEdge);
+                    c.Fill(p => Mathf.Max(Mathf.Max(IconCanvas.Ring(p, new Vector2(0.5f, 0.52f), 0.33f, 0.05f), s * (0.5f - p.x) + 0.04f), 0.3f - p.y), Hand);
+                }
+            });
+            Save("Choice_ThumbsUp", c =>
+            {
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.54f, 0.62f), new Vector2(0.2f, 0.17f), 0.07f), HandEdge);
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.54f, 0.62f), new Vector2(0.18f, 0.15f), 0.06f), Hand);
+                c.Fill(p => IconCanvas.Segment(p, new Vector2(0.42f, 0.48f), new Vector2(0.46f, 0.2f), 0.075f), HandEdge);
+                c.Fill(p => IconCanvas.Segment(p, new Vector2(0.42f, 0.48f), new Vector2(0.46f, 0.2f), 0.058f), Hand);
+                for (int i = 0; i < 3; i++)
+                {
+                    float y = 0.56f + i * 0.08f;
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.6f, y), new Vector2(0.7f, y), 0.008f), HandEdge);
+                }
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.24f, 0.64f), new Vector2(0.07f, 0.17f), 0.03f), blue);
+            });
+            Save("Choice_Wave", c =>
+            {
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.5f, 0.62f), new Vector2(0.17f, 0.17f), 0.08f), Hand);
+                for (int i = 0; i < 4; i++)
+                {
+                    float x = 0.37f + i * 0.085f;
+                    float top = i == 0 || i == 3 ? 0.3f : 0.22f;
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(x, 0.56f), new Vector2(x, top), 0.04f), Hand);
+                }
+                c.Fill(p => IconCanvas.Segment(p, new Vector2(0.34f, 0.66f), new Vector2(0.22f, 0.5f), 0.04f), Hand);
+                // Motion arcs.
+                foreach (float s in new[] { -1f, 1f })
+                    c.Fill(p => Mathf.Max(IconCanvas.Ring(p, new Vector2(0.5f, 0.42f), 0.34f + (s > 0 ? 0f : 0.06f), 0.025f), Mathf.Abs(p.y - 0.3f) - 0.12f + (p.x < 0.5f ? 1f : 0f)), blue);
+            });
+            Save("Choice_Wait", c =>
+            {
+                var glass = IconCanvas.V(0.3f, 0.2f, 0.7f, 0.2f, 0.53f, 0.5f, 0.7f, 0.8f, 0.3f, 0.8f, 0.47f, 0.5f);
+                c.Fill(p => IconCanvas.Polygon(p, glass), NumuColor.Hex("#d9ecff"));
+                c.Fill(p => IconCanvas.Polygon(p, IconCanvas.V(0.36f, 0.3f, 0.64f, 0.3f, 0.5f, 0.46f)), NumuColor.Hex("#f2c14e"));
+                c.Fill(p => IconCanvas.Polygon(p, IconCanvas.V(0.5f, 0.6f, 0.66f, 0.77f, 0.34f, 0.77f)), NumuColor.Hex("#f2c14e"));
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.5f, 0.17f), new Vector2(0.26f, 0.035f), 0.02f), blue);
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.5f, 0.83f), new Vector2(0.26f, 0.035f), 0.02f), blue);
+            });
+            Save("Choice_Laugh", c =>
+            {
+                c.Fill(p => IconCanvas.Circle(p, new Vector2(0.5f, 0.5f), 0.43f), Skin);
+                foreach (float s in new[] { -1f, 1f })
+                {
+                    // Squeezed "> <" eyes.
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.5f + s * 0.2f, 0.34f), new Vector2(0.5f + s * 0.1f, 0.39f), 0.022f), Ink);
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.5f + s * 0.1f, 0.39f), new Vector2(0.5f + s * 0.2f, 0.44f), 0.022f), Ink);
+                }
+                c.Fill(p => Mathf.Max(IconCanvas.Circle(p, new Vector2(0.5f, 0.55f), 0.24f), 0.56f - p.y), Ink);
+                c.Fill(p => Mathf.Max(IconCanvas.Circle(p, new Vector2(0.5f, 0.82f), 0.1f), IconCanvas.Circle(p, new Vector2(0.5f, 0.55f), 0.22f)), Cheek);
+            });
+            Save("Choice_Shout", c =>
+            {
+                c.Fill(p => IconCanvas.Circle(p, new Vector2(0.4f, 0.5f), 0.32f), Skin);
+                foreach (float s in new[] { -1f, 1f })
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.4f + s * 0.17f, 0.34f), new Vector2(0.4f + s * 0.05f, 0.4f), 0.022f), Ink);
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.4f, 0.62f), new Vector2(0.11f, 0.08f), 0.06f), Ink);
+                for (int i = -1; i <= 1; i++)
+                {
+                    float y = 0.5f + i * 0.16f;
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.78f, 0.5f + i * 0.06f), new Vector2(0.92f, y), 0.025f), red);
+                }
+            });
+            Save("Choice_Push", c =>
+            {
+                foreach (float x in new[] { 0.3f, 0.56f })
+                    c.Fill(p => Mathf.Min(IconCanvas.Segment(p, new Vector2(x, 0.25f), new Vector2(x + 0.2f, 0.5f), 0.06f), IconCanvas.Segment(p, new Vector2(x + 0.2f, 0.5f), new Vector2(x, 0.75f), 0.06f)), red);
+            });
+            Save("Choice_WalkAway", c =>
+            {
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.32f, 0.5f), new Vector2(0.16f, 0.32f), 0.02f), NumuColor.Hex("#b98a5e"));
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.32f, 0.5f), new Vector2(0.12f, 0.28f), 0.01f), NumuColor.Hex("#3f3550"));
+                c.Fill(p => Mathf.Min(IconCanvas.Segment(p, new Vector2(0.52f, 0.5f), new Vector2(0.84f, 0.5f), 0.045f),
+                    IconCanvas.Polygon(p, IconCanvas.V(0.9f, 0.5f, 0.74f, 0.36f, 0.74f, 0.64f))), grey);
+            });
+            Save("Choice_Ignore", c =>
+            {
+                c.Fill(p => IconCanvas.Box(p, new Vector2(0.5f, 0.44f), new Vector2(0.36f, 0.26f), 0.14f), NumuColor.Hex("#e4e1ec"));
+                c.Fill(p => IconCanvas.Polygon(p, IconCanvas.V(0.3f, 0.62f, 0.44f, 0.66f, 0.26f, 0.84f)), NumuColor.Hex("#e4e1ec"));
+                for (int i = -1; i <= 1; i++)
+                {
+                    float x = 0.5f + i * 0.13f;
+                    c.Fill(p => IconCanvas.Circle(p, new Vector2(x, 0.44f), 0.04f), grey);
+                }
+                c.Fill(p => IconCanvas.Segment(p, new Vector2(0.2f, 0.78f), new Vector2(0.8f, 0.12f), 0.03f), grey);
+            });
         }
 
         public static Sprite Sprite(string name) => AssetDatabase.LoadAssetAtPath<Sprite>($"{Dir}/{name}.png");
