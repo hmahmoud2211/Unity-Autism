@@ -16,6 +16,7 @@ namespace Numu.World
         public enum StepKind
         {
             Line,             // actor says text (actor -1 = the player child)
+            GroupShot,        // frames all actors together (cutscene two-shot)
             Expression,       // actor's face changes to emotion at strength
             Animation,        // actor holds an animator state
             EmotionQuestion,  // "How is … feeling?" with the four emotion cards; correct = emotion
@@ -68,6 +69,8 @@ namespace Numu.World
         public string introToast;
         public string doneToast = "Great job! Keep exploring, or tap Map to go back.";
         public string playerName = "You";
+        [Tooltip("Open the cutscene on a shot framing every actor, before any close-up.")]
+        public bool openWithGroupShot;
         public List<Actor> actors = new List<Actor>();
         public List<Step> steps = new List<Step>();
 
@@ -105,7 +108,8 @@ namespace Numu.World
             var saved = new List<(Transform look, float offset, float weight)>();
             foreach (var a in actors) saved.Add((a.npc.lookTarget, a.npc.lookHeightOffset, a.npc.maxLookWeight));
             yield return TurnActorsToPlayer();
-            Frame(0);
+            if (openWithGroupShot && actors.Count > 1) FrameGroup();
+            else Frame(0);
             yield return new WaitForSeconds(1.0f);
 
             int questions = 0, solved = 0, attempts = 0;
@@ -131,11 +135,18 @@ namespace Numu.World
                         break;
 
                     case StepKind.Expression:
-                        if (actor?.face != null) actor.face.SetExpression(step.emotion, step.strength);
+                        var emotion = actor?.npc != null ? actor.npc.GetComponent<EmotionController>() : null;
+                        if (emotion != null) emotion.Show(step.emotion, step.strength);
+                        else if (actor?.face != null) actor.face.SetExpression(step.emotion, step.strength);
                         break;
 
                     case StepKind.Animation:
                         actor?.npc.Override(step.state);
+                        break;
+
+                    case StepKind.GroupShot:
+                        FrameGroup();
+                        yield return new WaitForSeconds(step.seconds);
                         break;
 
                     case StepKind.Wait:
@@ -263,6 +274,27 @@ namespace Numu.World
                 npc.lookTarget = speaker ? followCamera.transform : player.transform;
                 npc.lookHeightOffset = speaker ? 0f : 1.0f;
                 npc.maxLookWeight = speaker ? 0.85f : 0.6f;
+            }
+        }
+
+        /// <summary>Over-the-shoulder shot from the child's side that keeps every actor in frame.</summary>
+        void FrameGroup()
+        {
+            _shotActor = -3;
+            Vector3 center = Vector3.zero;
+            foreach (var a in actors) center += a.faceAnchor.position;
+            center /= actors.Count;
+            float spread = 0f;
+            foreach (var a in actors) spread = Mathf.Max(spread, Vector3.Distance(a.faceAnchor.position, center));
+            Vector3 toPlayer = Vector3.ProjectOnPlane(player.transform.position - center, Vector3.up).normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, toPlayer);
+            float dist = Mathf.Clamp(1.8f + spread * 1.6f, 2.2f, 5f);
+            followCamera.SetShot(center + toPlayer * dist + side * 1.0f + Vector3.up * 0.25f, center + Vector3.down * 0.25f);
+            foreach (var a in actors)
+            {
+                a.npc.lookTarget = player.transform;
+                a.npc.lookHeightOffset = 1.0f;
+                a.npc.maxLookWeight = 0.7f;
             }
         }
 

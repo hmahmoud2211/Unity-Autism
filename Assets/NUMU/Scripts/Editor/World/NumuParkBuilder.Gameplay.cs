@@ -14,8 +14,8 @@ namespace Numu.EditorTools.World
             public NumuPlayerController player;
             public NumuFollowCamera followCamera;
             public NumuInteractionSystem interactions;
-            public NumuEmotionScenario scenario;
-            public NumuInteractable miaInteraction;
+            public NumuConversationScenario scenario;
+            public NumuInteractable friendInteraction;
         }
 
         static GameObject SpawnCharacter(string avatar, string displayName, Transform parent, Vector3 pos, float yaw)
@@ -99,8 +99,9 @@ namespace Numu.EditorTools.World
             camGo.AddComponent<AudioListener>();
             var follow = camGo.AddComponent<NumuFollowCamera>();
             follow.target = player.transform;
-            follow.distance = 4.8f;
-            follow.height = 2.3f;
+            // Close behind-the-shoulder framing (as in JeStiMulE): the whole child stays in view.
+            follow.distance = 3.8f;
+            follow.height = 1.9f;
             follow.lookHeight = 1.05f;
             follow.obstacleMask = ~0 & ~(1 << 2);
             camGo.transform.position = player.transform.position + new Vector3(0, 2.3f, -4.8f);
@@ -108,8 +109,10 @@ namespace Numu.EditorTools.World
             pc.cameraTransform = camGo.transform;
             refs.followCamera = follow;
 
-            // ---------------------------------------------------------------- Mia on the swing (the activity)
+            // ---------------------------------------------------------------- two friends at the swings (the activity)
+            // Mia swings; Lina waits for her turn in front of the swings, and smiles and waves when the child comes near.
             var seatPoint = _root.Find("Playground/SwingSet/SeatPivot_0/SeatPoint");
+            var otherSeat = _root.Find("Playground/SwingSet/SeatPivot_1/SeatPoint");
             var mia = SpawnCharacter("Female_Child_01", "Mia", seatPoint, seatPoint.position, 180f);
             mia.GetComponent<Animator>().cullingMode = AnimatorCullingMode.AlwaysAnimate;
             SeatOn(mia, seatPoint.position, "f_sit_chair_idle_neutral_01", 0.02f);
@@ -125,41 +128,66 @@ namespace Numu.EditorTools.World
                 h.localRotation = Quaternion.Euler(0, 180, side * 90f);
                 if (side < 0) miaNpc.leftHandTarget = h; else miaNpc.rightHandTarget = h;
             }
-            var miaFace = mia.GetComponent<NumuFacialExpressions>();
-            miaFace.SetExpression(NumuEmotion.Happy, 0.9f);
+            mia.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.9f);
 
-            var head = mia.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head);
-            var interactionGo = new GameObject("Interaction_SayHiToMia");
-            interactionGo.transform.SetParent(g, false);
             Vector3 seatGround = OnGround(new Vector3(seatPoint.position.x, 0, seatPoint.position.z));
-            interactionGo.transform.position = seatGround + Vector3.back * 2.4f;
+            Vector3 towardOther = Vector3.ProjectOnPlane(otherSeat.position - seatPoint.position, Vector3.up).normalized;
+            // Clear of Mia's swing arc (about 0.8 m forward of the seat at full swing).
+            var lina = SpawnCharacter("Female_Child_02", "Lina", g, OnGround(seatGround + towardOther * 0.8f + Vector3.back * 1.7f), 180f);
+            lina.GetComponent<Animator>().cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            var linaNpc = MakeNpc(lina, "Idle", player.transform, "LookAround", "Clap");
+            linaNpc.greetState = "Wave";
+            linaNpc.greetRadius = 7f;
+            lina.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.6f);
+            Blocker(lina, 0.25f, 1.4f);
+
+            var linaHead = lina.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head);
+            var interactionGo = new GameObject("Interaction_SayHiToFriends");
+            interactionGo.transform.SetParent(g, false);
+            interactionGo.transform.position = OnGround(lina.transform.position + Vector3.back * 1.6f);
             var interactable = interactionGo.AddComponent<NumuInteractable>();
-            interactable.prompt = "Say hi to Mia";
+            interactable.prompt = "Say hi to Lina";
             interactable.radius = 2.2f;
-            interactable.focusPoint = head;
-            refs.miaInteraction = interactable;
+            interactable.focusPoint = linaHead;
+            refs.friendInteraction = interactable;
 
             var scenarioGo = new GameObject("Scenario_ParkSwingHappy");
             scenarioGo.transform.SetParent(_root, false);
-            var scenario = scenarioGo.AddComponent<NumuEmotionScenario>();
+            var scenario = scenarioGo.AddComponent<NumuConversationScenario>();
+            scenario.scenarioId = "park_swing_happy";
+            scenario.world = "park";
+            scenario.progressIsland = "park";
+            scenario.progressLevel = 4;
+            scenario.openWithGroupShot = true;
+            scenario.introToast = "Lina and Mia are at the swings. Go and say hi!";
+            scenario.doneToast = "Great job! Keep exploring the park, or tap Map to go back.";
+            scenario.actors.Add(new NumuConversationScenario.Actor { name = "Lina", npc = linaNpc, face = lina.GetComponent<NumuFacialExpressions>(), faceAnchor = linaHead, turnToPlayer = true, shotDistance = 1.1f });
+            scenario.actors.Add(new NumuConversationScenario.Actor { name = "Mia", npc = miaNpc, face = mia.GetComponent<NumuFacialExpressions>(), faceAnchor = mia.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head), turnToPlayer = false, shotDistance = 1.25f });
             scenario.interactable = interactable;
-            scenario.npc = miaNpc;
-            scenario.face = miaFace;
-            scenario.swing = seatPoint.parent.GetComponent<NumuSwing>();
-            scenario.faceAnchor = head;
             scenario.player = pc;
             scenario.followCamera = follow;
-            scenario.talkState = "SitSwing";
-            scenario.idleState = "SitSwing";
-            scenario.happyReaction = "SitSwing";
+            var L = NumuConversationScenario.StepKind.Line;
+            var A = NumuConversationScenario.StepKind.Animation;
+            var E = NumuConversationScenario.StepKind.Expression;
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = E, actor = 0, emotion = NumuEmotion.Happy, strength = 1f });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = A, actor = 0, state = "Wave" });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = NumuConversationScenario.StepKind.Wait, seconds = 1.6f });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = A, actor = 0, state = "Talk" });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = L, actor = 0, text = "Hi! I'm Lina. Mia and I are taking turns on the swing." });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = L, actor = 0, text = "Do you want to play with us?" });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = A, actor = 0, state = "Idle" });
+            scenario.steps.Add(new NumuConversationScenario.Step
+            {
+                kind = NumuConversationScenario.StepKind.EmotionQuestion, actor = 0, text = "How is your friend feeling?", emotion = NumuEmotion.Happy,
+                praise = "Lina is happy. She has a big smile and she waved hello to you.",
+                hint = "Look at Lina's face: the corners of her mouth go up in a smile, and she waved at you. What does a smile tell us?",
+            });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = L, actor = -1, text = "Yes please! Let's take turns." });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = A, actor = 0, state = "Clap" });
+            scenario.steps.Add(new NumuConversationScenario.Step { kind = L, actor = 0, text = "Yay! You can go after Mia." });
             refs.scenario = scenario;
 
             // ---------------------------------------------------------------- ambient park life
-            var lina = SpawnCharacter("Female_Child_02", "Lina", g, OnGround(new Vector3(15.8f, 0, 5.2f)), 215f);
-            lina.transform.position += Vector3.up * 0.06f;
-            MakeNpc(lina, "Idle", player.transform, "Cheer", "Clap", "Wave", "LookAround");
-            lina.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.6f);
-            Blocker(lina, 0.25f, 1.4f);
 
             var omar = SpawnCharacter("Male_Child_02", "Omar", g, OnGround(new Vector3(-8f, 0, -3f)), 90f);
             var omarNpc = MakeNpc(omar, "Idle", player.transform);
@@ -182,7 +210,7 @@ namespace Numu.EditorTools.World
             mum.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.35f);
 
             // Anime park visitor (VRoid); falls back to the Rocketbox adult if the VRM isn't imported.
-            string helperAvatar = NumuCharacterSetup.Prefab("VRM_SakuradaFumiriya") != null ? "VRM_SakuradaFumiriya" : "Male_Adult_02";
+            string helperAvatar = NumuCharacterSetup.UseAnimeCharacters && NumuCharacterSetup.Prefab("VRM_SakuradaFumiriya") != null ? "VRM_SakuradaFumiriya" : "Male_Adult_02";
             var helper = SpawnCharacter(helperAvatar, "Park helper", g, OnGround(new Vector3(4.2f, 0, 6.6f)), 70f);
             MakeNpc(helper, "Listen", player.transform, "LookAround", "Idle");
             helper.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Neutral, 1f);
@@ -195,7 +223,7 @@ namespace Numu.EditorTools.World
             refs.interactions = interactions;
             scenario.interactions = interactions;
 
-            _log.AppendLine("Characters: player child (third person), Mia on the swing (happy), Lina by the slide, Omar strolling, a grown-up on the bench, a park helper.");
+            _log.AppendLine("Characters: player child (third person), Mia on the swing and Lina waiting her turn (the activity), Omar strolling, a grown-up on the bench, a park helper.");
             return refs;
         }
 

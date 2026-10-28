@@ -29,7 +29,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4971878630125631107}
+  - {fileID: 4361493899738070930}
   - {fileID: 8160340924654344872}
   - {fileID: 5075478033659401318}
   - {fileID: 1775288707538105443}
@@ -265,13 +265,13 @@ LODGroup:
   - screenRelativeHeight: 0.012
     fadeTransitionWidth: 0
     renderers:
-    - renderer: {fileID: 8121964834348607751}
+    - renderer: {fileID: 1740801474139892239}
     - renderer: {fileID: 8388484907556190507}
     - renderer: {fileID: 4346389703986412448}
     - renderer: {fileID: 4770155698591951452}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
---- !u!1 &5573775721505164822
+--- !u!1 &5851438666678861864
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -279,9 +279,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4971878630125631107}
-  - component: {fileID: 216986179289689615}
-  - component: {fileID: 8121964834348607751}
+  - component: {fileID: 4361493899738070930}
+  - component: {fileID: 382439678973215261}
+  - component: {fileID: 1740801474139892239}
   m_Layer: 0
   m_Name: wooden_display_shelves_01
   m_TagString: Untagged
@@ -289,13 +289,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4971878630125631107
+--- !u!4 &4361493899738070930
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5573775721505164822}
+  m_GameObject: {fileID: 5851438666678861864}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
   m_LocalPosition: {x: -0, y: 0, z: 0}
@@ -304,21 +304,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 805045618589600156}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &216986179289689615
+--- !u!33 &382439678973215261
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5573775721505164822}
+  m_GameObject: {fileID: 5851438666678861864}
   m_Mesh: {fileID: 5610134881239608429, guid: 395a44db97b2840548649edde0698f05, type: 3}
---- !u!23 &8121964834348607751
+--- !u!23 &1740801474139892239
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5573775721505164822}
+  m_GameObject: {fileID: 5851438666678861864}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1

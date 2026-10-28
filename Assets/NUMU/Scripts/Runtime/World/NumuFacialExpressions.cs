@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Numu.World
 {
-    public enum NumuEmotion { Neutral, Happy, Sad, Angry, Fear, Surprise }
+    public enum NumuEmotion { Neutral, Happy, Sad, Angry, Fear, Surprise, Disgust }
 
     /// <summary>
     /// Drives facial blendshapes for the six core emotions, with smooth transitions,

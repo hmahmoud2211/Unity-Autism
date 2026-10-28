@@ -1,6 +1,8 @@
 # NUMU characters and camera
 
-## Anime characters (VRoid / VRM): current direction
+## Anime characters (VRoid / VRM): optional, off by default
+
+The art direction is semi-realistic humans (JeStiMulE style), so `NumuCharacterSetup.UseAnimeCharacters` is **false**: every world uses the Rocketbox human characters. The VRM pipeline below still works when it is turned on.
 
 **Pipeline:** VRoid Studio exports `.vrm`. UniVRM v0.131.4 imports it into Unity 6 as VRM 1.0, migrating VRM 0.x files, with URP MToon10 materials. `NumuCharacterSetup.SetupVrmCharacters` then:
 - builds a NUMU prefab in `Assets/NUMU/Characters/Char_VRM_<id>.prefab` with the shared humanoid animator

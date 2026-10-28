@@ -16,9 +16,9 @@ namespace Numu.EditorTools.World
                 chipBg = NumuColor.Hex("#fde3ef"),
                 chipInk = NumuColor.Hex("#a8186a"),
                 accent = NumuColor.Hex("#e0589c"),
-                prompt = "Say hi to Mia",
-                speaker = "Mia",
-                question = "How is Mia feeling?",
+                prompt = "Say hi to Lina",
+                speaker = "Lina",
+                question = "How is your friend feeling?",
             }, refs.interactions, refs.player);
             refs.scenario.ui = ui;
             _log.AppendLine("UI: HUD (Map + world chip), interaction prompt, touch joystick, subtitles, emotion question (4 faces), feedback, toast.");

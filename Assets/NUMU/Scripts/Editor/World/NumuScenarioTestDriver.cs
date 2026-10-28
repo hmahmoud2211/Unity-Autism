@@ -27,6 +27,7 @@ namespace Numu.EditorTools.World
         public static bool Done => _done;
 
         static bool _walkFirstPerson;
+        static double _triggeredAt;
         static Vector3 _walkStart;
 
         /// <param name="walkFirstPerson">
@@ -82,16 +83,14 @@ namespace Numu.EditorTools.World
             if (now < _next) return;
             if (now - _started > 240) { Finish("TIMEOUT"); return; }
 
-            // Works with the data-driven activities and with the Park's original swing activity.
             var scenario = Object.FindAnyObjectByType<NumuConversationScenario>();
-            var park = scenario == null ? Object.FindAnyObjectByType<NumuEmotionScenario>() : null;
             var ui = Object.FindAnyObjectByType<NumuWorldUI>();
-            if ((scenario == null && park == null) || ui == null) { Finish("no scenario/ui in scene"); return; }
-            var player = scenario != null ? scenario.player : park.player;
-            var interactable = scenario != null ? scenario.interactable : park.interactable;
-            var interactions = scenario != null ? scenario.interactions : park.interactions;
-            var followCamera = scenario != null ? scenario.followCamera : park.followCamera;
-            var npc = scenario != null ? scenario.actors[0].npc.transform : park.npc.transform;
+            if (scenario == null || ui == null) { Finish("no scenario/ui in scene"); return; }
+            var player = scenario.player;
+            var interactable = scenario.interactable;
+            var interactions = scenario.interactions;
+            var followCamera = scenario.followCamera;
+            var npc = scenario.actors[0].npc.transform;
 
             var view = followCamera;
             switch (_phase)
@@ -166,10 +165,14 @@ namespace Numu.EditorTools.World
                     Log($"prompt visible: {promptShown} ('{interactions.promptLabel.text}')");
                     Shot("prompt");
                     interactions.Trigger();
+                    _triggeredAt = now;
                     _phase = 2;
                     _next = now + 0.5;
                     return;
             }
+
+            // The cutscene's opening shot (before the first line).
+            if (_phase == 2 && now - _triggeredAt > 1.8 && !_captured.Contains("cutscene_open")) Shot("cutscene_open");
 
             // Conversation loop.
             if (Visible(ui.dialogueGroup))
@@ -191,13 +194,8 @@ namespace Numu.EditorTools.World
                 string q = ui.questionText.text;
                 if (q != _lastQuestion) { _lastQuestion = q; _answeredWrong = false; _questionIndex++; }
                 Shot($"question{_questionIndex}{(_answeredWrong ? "_retry" : "")}");
-                int correct;
-                if (scenario != null)
-                {
-                    var step = scenario.steps.Find(s => (s.kind == NumuConversationScenario.StepKind.EmotionQuestion || s.kind == NumuConversationScenario.StepKind.ChoiceQuestion) && s.text == q);
-                    correct = step.kind == NumuConversationScenario.StepKind.ChoiceQuestion ? step.correctOption : ui.choices.FindIndex(c => c.emotion == step.emotion);
-                }
-                else correct = ui.choices.FindIndex(c => c.emotion == park.correctEmotion);
+                var step = scenario.steps.Find(s => (s.kind == NumuConversationScenario.StepKind.EmotionQuestion || s.kind == NumuConversationScenario.StepKind.ChoiceQuestion) && s.text == q);
+                int correct = step.kind == NumuConversationScenario.StepKind.ChoiceQuestion ? step.correctOption : ui.choices.FindIndex(c => c.emotion == step.emotion);
                 int pick = _answeredWrong ? correct : (correct + 1) % 4;
                 Log($"question '{q}' → picking '{ui.choices[pick].label.text}' ({(pick == correct ? "correct" : "wrong on purpose")})");
                 _lastWrong = pick != correct;

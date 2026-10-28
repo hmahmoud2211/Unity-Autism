@@ -38,6 +38,7 @@ namespace Numu.EditorTools.World
             Save("Emotion_Fear", c => Face(c, "fear"));
             Save("Emotion_Surprise", c => Face(c, "surprise"));
             Save("Emotion_Neutral", c => Face(c, "neutral"));
+            Save("Emotion_Disgust", c => Face(c, "disgust"));
             Save("Glyph_Speech", c =>
             {
                 c.Fill(p => IconCanvas.Box(p, new Vector2(0.5f, 0.44f), new Vector2(0.36f, 0.26f), 0.14f), Color.white);
@@ -215,7 +216,12 @@ namespace Numu.EditorTools.World
             foreach (float s in new[] { -1f, 1f })
             {
                 Vector2 e = new Vector2(0.5f + s * 0.15f, eyeY);
-                if (kind == "happy")
+                if (kind == "disgust")
+                {
+                    // Squinting eyes.
+                    c.Fill(p => IconCanvas.Segment(p, e + new Vector2(-0.05f, 0.01f), e + new Vector2(0.05f, -0.005f), 0.022f), Ink);
+                }
+                else if (kind == "happy")
                 {
                     // Smiling "closed crescent" eyes.
                     c.Fill(p => Mathf.Max(IconCanvas.Ring(p, e + new Vector2(0, 0.03f), 0.055f, 0.03f), p.y - (e.y + 0.02f)), Ink);
@@ -234,6 +240,7 @@ namespace Numu.EditorTools.World
                     case "sad": b0 = new Vector2(0.5f + s * 0.24f, 0.36f); b1 = new Vector2(0.5f + s * 0.09f, 0.3f); break;
                     case "fear": b0 = new Vector2(0.5f + s * 0.24f, 0.31f); b1 = new Vector2(0.5f + s * 0.09f, 0.27f); break;
                     case "surprise": b0 = new Vector2(0.5f + s * 0.23f, 0.27f); b1 = new Vector2(0.5f + s * 0.08f, 0.27f); break;
+                    case "disgust": b0 = new Vector2(0.5f + s * 0.23f, 0.32f); b1 = new Vector2(0.5f + s * 0.08f, 0.35f); break;
                     default: b0 = new Vector2(0.5f + s * 0.22f, 0.33f); b1 = new Vector2(0.5f + s * 0.09f, 0.33f); break;
                 }
                 if (kind != "happy" && kind != "neutral") c.Fill(p => IconCanvas.Segment(p, b0, b1, 0.022f), Ink);
@@ -257,6 +264,17 @@ namespace Numu.EditorTools.World
                     break;
                 case "surprise":
                     c.Fill(p => IconCanvas.Circle(p, new Vector2(0.5f, 0.69f), 0.075f), Ink);
+                    break;
+                case "disgust":
+                    // Wrinkled nose and a wavy, raised upper lip.
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.46f, 0.52f), new Vector2(0.49f, 0.55f), 0.01f), Ink);
+                    c.Fill(p => IconCanvas.Segment(p, new Vector2(0.54f, 0.52f), new Vector2(0.51f, 0.55f), 0.01f), Ink);
+                    var lip = IconCanvas.V(0.37f, 0.72f, 0.44f, 0.66f, 0.5f, 0.7f, 0.56f, 0.65f, 0.63f, 0.71f);
+                    for (int k = 0; k < 4; k++)
+                    {
+                        Vector2 a = new Vector2(lip[k].x, lip[k].y), b = new Vector2(lip[k + 1].x, lip[k + 1].y);
+                        c.Fill(p => IconCanvas.Segment(p, a, b, 0.024f), Ink);
+                    }
                     break;
                 default:
                     c.Fill(p => IconCanvas.Segment(p, new Vector2(0.4f, 0.68f), new Vector2(0.6f, 0.68f), 0.025f), Ink);

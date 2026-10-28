@@ -204,7 +204,8 @@ namespace Numu.EditorTools.World
             Shadow(card, 20, 0.45f);
             Img(Fill("Bg", card), UISprite("UI_RoundRect"), NumuColor.Hex("#fff9fc"));
             ui.questionText = Text(Rect("Title", card, new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -24), new Vector2(1200, 80)), spec.question, 56, ink);
-            var options = new[] { (NumuEmotion.Happy, "Happy", "#fff1b8"), (NumuEmotion.Sad, "Sad", "#dcecff"), (NumuEmotion.Angry, "Angry", "#ffdcd6"), (NumuEmotion.Fear, "Scared", "#e9e2ff") };
+            // Colour code after Plutchik's wheel (as in JeStiMulE): happy yellow, sad blue, angry red, fear green.
+            var options = new[] { (NumuEmotion.Happy, "Happy", "#fff1b8"), (NumuEmotion.Sad, "Sad", "#d6e8ff"), (NumuEmotion.Angry, "Angry", "#ffd6d0"), (NumuEmotion.Fear, "Scared", "#d9f2d9") };
             ui.choices = new List<NumuWorldUI.Choice>();
             for (int i = 0; i < options.Length; i++)
             {

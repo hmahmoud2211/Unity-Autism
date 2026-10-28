@@ -87,6 +87,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cfb96c78a0f23462c8486ab64493a4b9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4464681301208841666}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: cfb96c78a0f23462c8486ab64493a4b9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2493748228574772912}
   m_SourcePrefab: {fileID: 100100000, guid: cfb96c78a0f23462c8486ab64493a4b9, type: 3}
 --- !u!1 &3916916789194838636 stripped
 GameObject:
@@ -219,6 +222,36 @@ MonoBehaviour:
       weight: 0.5
     - shape: AK_25_JawOpen
       weight: 0.25
+  - emotion: 6
+    shapes:
+    - shape: AK_50_NoseSneerLeft
+      weight: 1
+    - shape: AK_51_NoseSneerRight
+      weight: 1
+    - shape: AU_09_NoseWrinkler
+      weight: 0.7
+    - shape: AU_10_UpperLipRaiser
+      weight: 0.8
+    - shape: AK_48_MouthUpperUpLeft
+      weight: 0.6
+    - shape: AK_49_MouthUpperUpRight
+      weight: 0.6
+    - shape: AK_30_MouthFrownLeft
+      weight: 0.5
+    - shape: AK_31_MouthFrownRight
+      weight: 0.5
+    - shape: AU_15_LipCornerDepressor
+      weight: 0.4
+    - shape: AK_01_BrowDownLeft
+      weight: 0.45
+    - shape: AK_02_BrowDownRight
+      weight: 0.45
+    - shape: AK_19_EyeSquintLeft
+      weight: 0.5
+    - shape: AK_20_EyeSquintRight
+      weight: 0.5
+    - shape: AU_17_ChinRaiser
+      weight: 0.3
   - emotion: 5
     shapes:
     - shape: AK_04_BrowOuterUpLeft
@@ -255,6 +288,26 @@ MonoBehaviour:
     weight: 0.3
   - shape: AA_VI_10_aa
     weight: 0.45
+--- !u!114 &2493748228574772912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3916916789194838636}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58bb090ebd49a44f48e3f2e8855ba586, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Numu.World.EmotionController
+  face: {fileID: 4464681301208841666}
+  npc: {fileID: 0}
+  happyGesture: Wave
+  sadGesture: TalkSad
+  angryGesture: Angry
+  fearGesture: Nervous
+  surpriseGesture: 
+  disgustGesture: 
 --- !u!137 &4618713756273729613 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 8827672578707558256, guid: cfb96c78a0f23462c8486ab64493a4b9, type: 3}

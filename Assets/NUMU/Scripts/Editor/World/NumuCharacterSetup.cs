@@ -34,8 +34,14 @@ namespace Numu.EditorTools.World
         public static bool IsFemale(string avatar) =>
             avatar.StartsWith("Female") || (avatar.StartsWith("VRM_") && VrmFemale.TryGetValue(avatar.Substring(4), out var f) && f);
 
-        /// <summary>The character the child plays: the anime avatar when it has been imported, otherwise the Rocketbox boy.</summary>
-        public static string PlayerAvatar => Prefab("VRM_SendagayaShino") != null ? "VRM_SendagayaShino" : "Male_Child_01";
+        /// <summary>
+        /// Art direction switch. NUMU uses semi-realistic human characters (Rocketbox) throughout; the VRoid anime
+        /// characters stay importable but are only used when this is turned on.
+        /// </summary>
+        public static bool UseAnimeCharacters = false;
+
+        /// <summary>The character the child plays: the Rocketbox boy (or the anime avatar when anime is turned on).</summary>
+        public static string PlayerAvatar => UseAnimeCharacters && Prefab("VRM_SendagayaShino") != null ? "VRM_SendagayaShino" : "Male_Child_01";
         public static RuntimeAnimatorController NpcController(bool female) => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Dir}/{(female ? "NPC_Female" : "NPC_Male")}.controller");
 
         public static void SetupAll(StringBuilder log)
@@ -248,6 +254,7 @@ namespace Numu.EditorTools.World
                 var face = inst.AddComponent<NumuFacialExpressions>();
                 face.face = smr;
                 ConfigureFace(face);
+                inst.AddComponent<EmotionController>().face = face;
                 PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath($"VRM_{id}"));
                 Object.DestroyImmediate(inst);
                 n++;
@@ -302,6 +309,7 @@ namespace Numu.EditorTools.World
             var face = inst.AddComponent<NumuFacialExpressions>();
             face.face = smr;
             ConfigureFace(face);
+            inst.AddComponent<EmotionController>().face = face;
             PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(name));
             Object.DestroyImmediate(inst);
         }
@@ -368,6 +376,12 @@ namespace Numu.EditorTools.World
                     emotion = NumuEmotion.Surprise,
                     shapes = { W("Fcl_BRW_Surprised", 1f), W("Fcl_EYE_Surprised", 1f), W("Fcl_MTH_Surprised", 0.9f) },
                 },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    // VRoid has no disgust shapes: lowered brows, narrowed eyes, a pressed, downturned mouth.
+                    emotion = NumuEmotion.Disgust,
+                    shapes = { W("Fcl_BRW_Angry", 0.6f), W("Fcl_EYE_Angry", 0.5f), W("Fcl_MTH_Angry", 0.45f), W("Fcl_MTH_Sorrow", 0.4f), W("Fcl_MTH_E", 0.3f) },
+                },
             };
             face.blinkShapes = new List<string> { "Fcl_EYE_Close" };
             face.talkShapes = new List<NumuFacialExpressions.ShapeWeight> { W("Fcl_MTH_A", 0.55f) };
@@ -432,6 +446,18 @@ namespace Numu.EditorTools.World
                         W("AK_03_BrowInnerUp", 1f), W("AU_01_InnerBrowRaiser", 0.6f), W("AK_04_BrowOuterUpLeft", 0.6f), W("AK_05_BrowOuterUpRight", 0.6f),
                         W("AU_02_OuterBrowRaiser", 0.4f), W("AK_21_EyeWideLeft", 1f), W("AK_22_EyeWideRight", 1f), W("AU_05_UpperLidRaiser", 0.5f),
                         W("AK_46_MouthStretchLeft", 0.8f), W("AK_47_MouthStretchRight", 0.8f), W("AU_20_LipStretcher", 0.5f), W("AK_25_JawOpen", 0.25f),
+                    },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    // Wrinkled nose, raised upper lip, lowered lip corners, narrowed eyes and lowered brows.
+                    emotion = NumuEmotion.Disgust,
+                    shapes =
+                    {
+                        W("AK_50_NoseSneerLeft", 1f), W("AK_51_NoseSneerRight", 1f), W("AU_09_NoseWrinkler", 0.7f), W("AU_10_UpperLipRaiser", 0.8f),
+                        W("AK_48_MouthUpperUpLeft", 0.6f), W("AK_49_MouthUpperUpRight", 0.6f), W("AK_30_MouthFrownLeft", 0.5f), W("AK_31_MouthFrownRight", 0.5f),
+                        W("AU_15_LipCornerDepressor", 0.4f), W("AK_01_BrowDownLeft", 0.45f), W("AK_02_BrowDownRight", 0.45f),
+                        W("AK_19_EyeSquintLeft", 0.5f), W("AK_20_EyeSquintRight", 0.5f), W("AU_17_ChinRaiser", 0.3f),
                     },
                 },
                 new NumuFacialExpressions.ExpressionPreset

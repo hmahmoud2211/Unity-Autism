@@ -21,6 +21,13 @@ namespace Numu.World
         [Range(0f, 1f)] public float maxLookWeight = 0.75f;
         public NumuFacialExpressions face;
 
+        [Header("Greeting (optional)")]
+        [Tooltip("Animator state played once when the child first comes within greetRadius (e.g. \"Wave\").")]
+        public string greetState;
+        public float greetRadius = 6f;
+        public NumuEmotion greetEmotion = NumuEmotion.Happy;
+        bool _greeted;
+
         [Header("Hand IK (e.g. holding swing chains)")]
         public Transform leftHandTarget;
         public Transform rightHandTarget;
@@ -90,6 +97,16 @@ namespace Numu.World
         void Update()
         {
             if (_overridden) return;
+            if (!_greeted && !string.IsNullOrEmpty(greetState) && lookTarget != null &&
+                Vector3.Distance(lookTarget.position, transform.position) < greetRadius)
+            {
+                _greeted = true;
+                if (face != null) face.SetExpression(greetEmotion, 0.9f);
+                Play(greetState, 0.25f);
+                CancelInvoke(nameof(BackToBase));
+                Invoke(nameof(BackToBase), 2.6f);
+                _nextVariation = Time.time + 6f;
+            }
             if (waypoints.Count > 1)
             {
                 var wp = waypoints[_wp];

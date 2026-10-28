@@ -18,7 +18,7 @@ namespace Numu.EditorTools.World
     /// </summary>
     public static partial class NumuParkBuilder
     {
-        public const string ScenePath = "Assets/Scenes/Worlds/NUMU_Park.unity";
+        public const string ScenePath = "Assets/Scenes/NUMU_Park.unity";
         public const string WorldDir = "Assets/NUMU/Worlds/Park";
         const string PH = "Assets/ThirdParty/PolyHaven/Models";
         const string ACG = "Assets/ThirdParty/ambientCG";

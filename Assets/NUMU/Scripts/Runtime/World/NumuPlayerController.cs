@@ -17,6 +17,9 @@ namespace Numu.World
         public float walkSpeed = 1.25f;
         public float runSpeed = 2.6f;
         public float turnSpeed = 540f;
+        [Tooltip("Metres per second gained per second when starting to walk, and lost when stopping.")]
+        public float acceleration = 6f;
+        public float deceleration = 9f;
         public float gravity = -12f;
 
         static readonly int SpeedId = Animator.StringToHash("Speed");
@@ -24,6 +27,7 @@ namespace Numu.World
         CharacterController _cc;
         NumuFollowCamera _view;
         float _verticalVelocity;
+        Vector3 _planarVelocity;
         float _animSpeed;
 
         /// <summary>When false the player stands still (used during conversations and questions).</summary>
@@ -80,9 +84,12 @@ namespace Numu.World
             }
 
             _verticalVelocity = _cc.isGrounded ? -1f : _verticalVelocity + gravity * Time.deltaTime;
-            Vector3 velocity = (magnitude > 0.05f ? move.normalized * speed : Vector3.zero) + Vector3.up * _verticalVelocity;
-            _cc.Move(velocity * Time.deltaTime);
-            CurrentSpeed = speed * (magnitude > 0.05f ? 1f : 0f);
+            // Ease into and out of walking instead of starting and stopping instantly.
+            Vector3 wanted = magnitude > 0.05f ? move.normalized * speed : Vector3.zero;
+            float rate = wanted.sqrMagnitude >= _planarVelocity.sqrMagnitude ? acceleration : deceleration;
+            _planarVelocity = Vector3.MoveTowards(_planarVelocity, wanted, rate * Time.deltaTime);
+            _cc.Move((_planarVelocity + Vector3.up * _verticalVelocity) * Time.deltaTime);
+            CurrentSpeed = _planarVelocity.magnitude;
 
             _animSpeed = Mathf.MoveTowards(_animSpeed, CurrentSpeed, Time.deltaTime * 4f);
             if (animator != null) animator.SetFloat(SpeedId, _animSpeed);
