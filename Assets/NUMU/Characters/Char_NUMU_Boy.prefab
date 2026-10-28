@@ -54,15 +54,15 @@ PrefabInstance:
       objectReference: {fileID: 4300000, guid: 70164049d4028403381b7fdeadca2a48, type: 2}
     - target: {fileID: 434869246506894099, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_AABB.m_Extent.x
-      value: 0.7552082
+      value: 0.78520817
       objectReference: {fileID: 0}
     - target: {fileID: 434869246506894099, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_AABB.m_Extent.y
-      value: 0.17056409
+      value: 0.20056409
       objectReference: {fileID: 0}
     - target: {fileID: 434869246506894099, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_AABB.m_Extent.z
-      value: 0.57175803
+      value: 0.601758
       objectReference: {fileID: 0}
     - target: {fileID: 434869246506894099, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_SkinnedMotionVectors
@@ -90,15 +90,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8804637712421891867, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.23
+      value: 1.2
       objectReference: {fileID: 0}
     - target: {fileID: 8804637712421891867, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.13
+      value: 1.17
       objectReference: {fileID: 0}
     - target: {fileID: 8804637712421891867, guid: 455fae34b4513433eb975592e21347a3, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.09
+      value: 1.15
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -307,6 +307,28 @@ MonoBehaviour:
       weight: 0.35
     - shape: AK_32_MouthFunnel
       weight: 0.45
+  - emotion: 7
+    shapes:
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 1
+    - shape: AU_02_L_OuterBrowRaiser
+      weight: 0.6
+    - shape: AK_03_BrowInnerUp
+      weight: 0.3
+    - shape: AK_02_BrowDownRight
+      weight: 0.8
+    - shape: AK_20_EyeSquintRight
+      weight: 0.35
+    - shape: AK_21_EyeWideLeft
+      weight: 0.35
+    - shape: AK_33_MouthLeft
+      weight: 0.6
+    - shape: AK_42_MouthShrugLower
+      weight: 0.35
+    - shape: AK_38_MouthPucker
+      weight: 0.25
+    - shape: AK_37_MouthPressRight
+      weight: 0.3
   emotion: 0
   intensity: 1
   transitionTime: 0.35
@@ -315,12 +337,12 @@ MonoBehaviour:
     weight: 0.2
   - shape: AK_22_EyeWideRight
     weight: 0.2
-  - shape: AK_11_EyeLookDownLeft
-    weight: 0.1
-  - shape: AK_12_EyeLookDownRight
-    weight: 0.1
   - shape: AK_03_BrowInnerUp
-    weight: 0.12
+    weight: 0.1
+  - shape: AK_11_EyeLookDownLeft
+    weight: 0.08
+  - shape: AK_12_EyeLookDownRight
+    weight: 0.08
   autoBlink: 1
   blinkShapes:
   - AK_09_EyeBlinkLeft
@@ -352,6 +374,10 @@ MonoBehaviour:
   fearGesture: Nervous
   surpriseGesture: 
   disgustGesture: 
+  confusedGesture: 
   surpriseHands: 1
   fearHands: 2
+  confusedHands: 3
   handBlendTime: 0.35
+  headPose: 1
+  headBlendTime: 0.4

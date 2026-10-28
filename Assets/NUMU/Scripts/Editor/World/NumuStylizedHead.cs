@@ -30,6 +30,8 @@ namespace Numu.EditorTools.World
             public float hairEdge = 0.0035f;   // at the hairline
             public float hairTaper = 0.022f;   // distance from the hairline over which the thickness builds up
             public int hairSmoothing = 12;
+            public bool hairShell = true;      // only for short hair painted on the scalp (not hair cards or scarves)
+            public Color hairColor = new Color(0.73f, 0.49f, 0.26f); // the painted hair colour (sRGB) to find the hair area
         }
 
         public static Mesh Build(SkinnedMeshRenderer source, int headSubmesh, Texture2D headTexture, string assetPath, Settings s, out string report)
@@ -80,137 +82,148 @@ namespace Numu.EditorTools.World
             }
 
             // ---------------------------------------------------------------- hair shell
-            var pixels = ReadPixels(headTexture, out int tw, out int th);
-            bool IsHair(int i)
-            {
-                var p = uv[i];
-                if (p.y < 0.45f) return false; // the eye and mouth islands sit in the lower part of the texture
-                int x = Mathf.Clamp((int)(p.x * tw), 0, tw - 1), y = Mathf.Clamp((int)(p.y * th), 0, th - 1);
-                var col = pixels[y * tw + x];
-                return col.g < 0.55f && col.r - col.b > 0.3f;
-            }
-            // Vertices that share a position (UV seams) are one point of the surface.
-            var weld = new Dictionary<Vector3Int, int>();
-            var group = new int[n];
-            var groupPos = new List<Vector3>();
-            foreach (int i in headVerts)
-            {
-                var key = Vector3Int.RoundToInt(v[i] * 20000f);
-                if (!weld.TryGetValue(key, out int gi)) { gi = groupPos.Count; weld[key] = gi; groupPos.Add(v[i]); }
-                group[i] = gi;
-            }
-            // Every triangle touching painted hair: the shell then covers the painted hairline entirely, so no painted
-            // strands are left on the skin to stretch when the forehead moves.
             var hairTris = new List<int>();
-            var headTris = tris[headSubmesh];
-            for (int t = 0; t < headTris.Count; t += 3)
-                if (IsHair(headTris[t]) || IsHair(headTris[t + 1]) || IsHair(headTris[t + 2]))
-                    hairTris.AddRange(new[] { headTris[t], headTris[t + 1], headTris[t + 2] });
-            hairTris = LargestComponent(hairTris, group);
-            // One clean hair colour for the shell (the painted texture has a soft gradient at the hairline): the UV of
-            // the hair vertex whose colour is closest to the median hair colour.
-            var hairVerts = hairTris.Distinct().Where(IsHair).ToList();
-            Color Sample(Vector2 p) => pixels[Mathf.Clamp((int)(p.y * th), 0, th - 1) * tw + Mathf.Clamp((int)(p.x * tw), 0, tw - 1)];
-            var cols = hairVerts.Select(i => Sample(uv[i])).ToList();
-            var median = new Color(cols.Select(c => c.r).OrderBy(x => x).ElementAt(cols.Count / 2), cols.Select(c => c.g).OrderBy(x => x).ElementAt(cols.Count / 2), cols.Select(c => c.b).OrderBy(x => x).ElementAt(cols.Count / 2));
-            Vector2 hairUV = uv[hairVerts.OrderBy(i => { var c = Sample(uv[i]); return Mathf.Abs(c.r - median.r) + Mathf.Abs(c.g - median.g) + Mathf.Abs(c.b - median.b); }).First()];
-
-            // Welded edges used by one hair triangle form the hairline.
-            var edgeUse = new Dictionary<(int, int), int>();
-            for (int t = 0; t < hairTris.Count; t += 3)
-                for (int e = 0; e < 3; e++)
-                {
-                    var key = Edge(group[hairTris[t + e]], group[hairTris[t + (e + 1) % 3]]);
-                    edgeUse[key] = edgeUse.TryGetValue(key, out int c) ? c + 1 : 1;
-                }
-            var neighbours = new Dictionary<int, HashSet<int>>();
-            foreach (var e in edgeUse.Keys)
-            {
-                (neighbours.TryGetValue(e.Item1, out var a) ? a : neighbours[e.Item1] = new HashSet<int>()).Add(e.Item2);
-                (neighbours.TryGetValue(e.Item2, out var b) ? b : neighbours[e.Item2] = new HashSet<int>()).Add(e.Item1);
-            }
-            var boundary = new HashSet<int>(edgeUse.Where(kv => kv.Value == 1).SelectMany(kv => new[] { kv.Key.Item1, kv.Key.Item2 }));
-            var dist = Geodesic(neighbours, boundary, groupPos);
-            // A smooth hairline: relax the boundary loop along itself (the triangle edges zig-zag).
-            var basePos = new List<Vector3>(groupPos);
-            var loopNb = new Dictionary<int, List<int>>();
-            foreach (var e in edgeUse.Where(kv => kv.Value == 1).Select(kv => kv.Key))
-            {
-                (loopNb.TryGetValue(e.Item1, out var a) ? a : loopNb[e.Item1] = new List<int>()).Add(e.Item2);
-                (loopNb.TryGetValue(e.Item2, out var b) ? b : loopNb[e.Item2] = new List<int>()).Add(e.Item1);
-            }
-            for (int it = 0; it < 8; it++)
-            {
-                var next = new List<Vector3>(basePos);
-                foreach (var kv in loopNb)
-                    if (kv.Value.Count == 2) next[kv.Key] = Vector3.Lerp(basePos[kv.Key], (basePos[kv.Value[0]] + basePos[kv.Value[1]]) * 0.5f, 0.5f);
-                basePos = next;
-            }
-
-            // Outward direction per welded point: the original (smooth) vertex normals, averaged.
-            var gNormal = new Dictionary<int, Vector3>();
-            foreach (int i in hairTris.Distinct()) gNormal[group[i]] = (gNormal.TryGetValue(group[i], out var gn) ? gn : Vector3.zero) + nrm[i];
-            float zMin = gNormal.Keys.Min(gi => groupPos[gi].z), zMax = gNormal.Keys.Max(gi => groupPos[gi].z);
-            var offset = new Dictionary<int, Vector3>();
-            foreach (var gi in gNormal.Keys)
-            {
-                float up = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(zMin + (zMax - zMin) * 0.35f, zMax, groupPos[gi].z));
-                float core = Mathf.Lerp(s.hairSide, s.hairTop, up);
-                float taper = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(dist[gi] / s.hairTaper));
-                offset[gi] = gNormal[gi].normalized * Mathf.Lerp(s.hairEdge, core, taper);
-            }
-            // A smooth helmet rather than a bumpy copy of the skull: relax the offsets, keeping the hairline fixed.
-            for (int it = 0; it < s.hairSmoothing; it++)
-            {
-                var next = new Dictionary<int, Vector3>(offset);
-                foreach (var gi in offset.Keys)
-                {
-                    if (boundary.Contains(gi) || !neighbours.TryGetValue(gi, out var nb) || nb.Count == 0) continue;
-                    Vector3 avg = Vector3.zero;
-                    foreach (int j in nb) avg += offset[j];
-                    next[gi] = Vector3.Lerp(offset[gi], avg / nb.Count, 0.5f);
-                }
-                offset = next;
-            }
-
-            // Shell vertices: one copy per original vertex (keeps UV seams), same weights and blendshape deltas.
             var shellOf = new Dictionary<int, int>();
-            int Copy(int i, Vector3 pos, Vector3 normal)
-            {
-                int ni = v.Count;
-                v.Add(pos); nrm.Add(normal); uv.Add(uv[i]); bw.Add(bw[i]);
-                if (tan.Count > 0) tan.Add(tan[i]);
-                foreach (var shape in shapes) foreach (var f in shape.frames) { f.dv.Add(f.dv[i]); f.dn.Add(f.dn[i]); f.dt.Add(f.dt[i]); }
-                return ni;
-            }
-            foreach (int i in hairTris.Distinct())
-            {
-                shellOf[i] = Copy(i, basePos[group[i]] + offset[group[i]], nrm[i]);
-                uv[shellOf[i]] = hairUV;
-            }
-            int shellStart = headTris.Count;
-            for (int t = 0; t < hairTris.Count; t++) headTris.Add(shellOf[hairTris[t]]);
-            RecomputeNormals(v, nrm, headTris, shellStart, headTris.Count, shellOf.Values, group: null);
-
-            // Skirt: closes the gap between the shell's edge and the scalp along the hairline.
             int skirtQuads = 0;
-            for (int t = 0; t < hairTris.Count; t += 3)
-                for (int e = 0; e < 3; e++)
+            if (s.hairShell)
+            {
+                var pixels = ReadPixels(headTexture, out int tw, out int th);
+                bool IsHair(int i)
                 {
-                    int a = hairTris[t + e], b = hairTris[t + (e + 1) % 3], c = hairTris[t + (e + 2) % 3];
-                    if (edgeUse[Edge(group[a], group[b])] != 1) continue;
-                    // Outward = away from the hair triangle, along the surface.
-                    Vector3 mid = (v[a] + v[b]) * 0.5f;
-                    Vector3 outward = Vector3.ProjectOnPlane(mid - v[c], nrm[a] + nrm[b]).normalized;
-                    int a0 = Copy(a, basePos[group[a]] - nrm[a] * 0.001f, outward), b0 = Copy(b, basePos[group[b]] - nrm[b] * 0.001f, outward);
-                    int a1 = Copy(shellOf[a], v[shellOf[a]], outward), b1 = Copy(shellOf[b], v[shellOf[b]], outward);
-                    uv[a0] = uv[b0] = hairUV;
-                    // Unity's front faces wind clockwise seen from outside: order the quad so its normal is "outward".
-                    Vector3 fn = Vector3.Cross(v[b0] - v[a0], v[a1] - v[a0]);
-                    if (Vector3.Dot(fn, outward) >= 0) headTris.AddRange(new[] { a0, b0, a1, b0, b1, a1 });
-                    else headTris.AddRange(new[] { a0, a1, b0, b0, a1, b1 });
-                    skirtQuads++;
+                    var p = uv[i];
+                    if (p.y < 0.45f) return false; // the eye and mouth islands sit in the lower part of the texture
+                    int x = Mathf.Clamp((int)(p.x * tw), 0, tw - 1), y = Mathf.Clamp((int)(p.y * th), 0, th - 1);
+                    var col = pixels[y * tw + x];
+                    // The same colour as the hair at any brightness (shading), and not much else.
+                    Color h = s.hairColor;
+                    float k = (col.r * h.r + col.g * h.g + col.b * h.b) / (h.r * h.r + h.g * h.g + h.b * h.b);
+                    if (k < 0.7f || k > 1.35f) return false;
+                    float dr = col.r - k * h.r, dg = col.g - k * h.g, db = col.b - k * h.b;
+                    return dr * dr + dg * dg + db * db < 0.003f;
                 }
+                // Vertices that share a position (UV seams) are one point of the surface.
+                var weld = new Dictionary<Vector3Int, int>();
+                var group = new int[n];
+                var groupPos = new List<Vector3>();
+                foreach (int i in headVerts)
+                {
+                    var key = Vector3Int.RoundToInt(v[i] * 20000f);
+                    if (!weld.TryGetValue(key, out int gi)) { gi = groupPos.Count; weld[key] = gi; groupPos.Add(v[i]); }
+                    group[i] = gi;
+                }
+                // Every triangle touching painted hair: the shell then covers the painted hairline entirely, so no painted
+                // strands are left on the skin to stretch when the forehead moves.
+                hairTris = new List<int>();
+                var headTris = tris[headSubmesh];
+                for (int t = 0; t < headTris.Count; t += 3)
+                    if (IsHair(headTris[t]) || IsHair(headTris[t + 1]) || IsHair(headTris[t + 2]))
+                        hairTris.AddRange(new[] { headTris[t], headTris[t + 1], headTris[t + 2] });
+                hairTris = LargestComponent(hairTris, group);
+                // One clean hair colour for the shell (the painted texture has a soft gradient at the hairline): the UV of
+                // the hair vertex whose colour is closest to the median hair colour.
+                var hairVerts = hairTris.Distinct().Where(IsHair).ToList();
+                Color Sample(Vector2 p) => pixels[Mathf.Clamp((int)(p.y * th), 0, th - 1) * tw + Mathf.Clamp((int)(p.x * tw), 0, tw - 1)];
+                var cols = hairVerts.Select(i => Sample(uv[i])).ToList();
+                var median = new Color(cols.Select(c => c.r).OrderBy(x => x).ElementAt(cols.Count / 2), cols.Select(c => c.g).OrderBy(x => x).ElementAt(cols.Count / 2), cols.Select(c => c.b).OrderBy(x => x).ElementAt(cols.Count / 2));
+                Vector2 hairUV = uv[hairVerts.OrderBy(i => { var c = Sample(uv[i]); return Mathf.Abs(c.r - median.r) + Mathf.Abs(c.g - median.g) + Mathf.Abs(c.b - median.b); }).First()];
+
+                // Welded edges used by one hair triangle form the hairline.
+                var edgeUse = new Dictionary<(int, int), int>();
+                for (int t = 0; t < hairTris.Count; t += 3)
+                    for (int e = 0; e < 3; e++)
+                    {
+                        var key = Edge(group[hairTris[t + e]], group[hairTris[t + (e + 1) % 3]]);
+                        edgeUse[key] = edgeUse.TryGetValue(key, out int c) ? c + 1 : 1;
+                    }
+                var neighbours = new Dictionary<int, HashSet<int>>();
+                foreach (var e in edgeUse.Keys)
+                {
+                    (neighbours.TryGetValue(e.Item1, out var a) ? a : neighbours[e.Item1] = new HashSet<int>()).Add(e.Item2);
+                    (neighbours.TryGetValue(e.Item2, out var b) ? b : neighbours[e.Item2] = new HashSet<int>()).Add(e.Item1);
+                }
+                var boundary = new HashSet<int>(edgeUse.Where(kv => kv.Value == 1).SelectMany(kv => new[] { kv.Key.Item1, kv.Key.Item2 }));
+                var dist = Geodesic(neighbours, boundary, groupPos);
+                // A smooth hairline: relax the boundary loop along itself (the triangle edges zig-zag).
+                var basePos = new List<Vector3>(groupPos);
+                var loopNb = new Dictionary<int, List<int>>();
+                foreach (var e in edgeUse.Where(kv => kv.Value == 1).Select(kv => kv.Key))
+                {
+                    (loopNb.TryGetValue(e.Item1, out var a) ? a : loopNb[e.Item1] = new List<int>()).Add(e.Item2);
+                    (loopNb.TryGetValue(e.Item2, out var b) ? b : loopNb[e.Item2] = new List<int>()).Add(e.Item1);
+                }
+                for (int it = 0; it < 8; it++)
+                {
+                    var next = new List<Vector3>(basePos);
+                    foreach (var kv in loopNb)
+                        if (kv.Value.Count == 2) next[kv.Key] = Vector3.Lerp(basePos[kv.Key], (basePos[kv.Value[0]] + basePos[kv.Value[1]]) * 0.5f, 0.5f);
+                    basePos = next;
+                }
+
+                // Outward direction per welded point: the original (smooth) vertex normals, averaged.
+                var gNormal = new Dictionary<int, Vector3>();
+                foreach (int i in hairTris.Distinct()) gNormal[group[i]] = (gNormal.TryGetValue(group[i], out var gn) ? gn : Vector3.zero) + nrm[i];
+                float zMin = gNormal.Keys.Min(gi => groupPos[gi].z), zMax = gNormal.Keys.Max(gi => groupPos[gi].z);
+                var offset = new Dictionary<int, Vector3>();
+                foreach (var gi in gNormal.Keys)
+                {
+                    float up = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(zMin + (zMax - zMin) * 0.35f, zMax, groupPos[gi].z));
+                    float core = Mathf.Lerp(s.hairSide, s.hairTop, up);
+                    float taper = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(dist[gi] / s.hairTaper));
+                    offset[gi] = gNormal[gi].normalized * Mathf.Lerp(s.hairEdge, core, taper);
+                }
+                // A smooth helmet rather than a bumpy copy of the skull: relax the offsets, keeping the hairline fixed.
+                for (int it = 0; it < s.hairSmoothing; it++)
+                {
+                    var next = new Dictionary<int, Vector3>(offset);
+                    foreach (var gi in offset.Keys)
+                    {
+                        if (boundary.Contains(gi) || !neighbours.TryGetValue(gi, out var nb) || nb.Count == 0) continue;
+                        Vector3 avg = Vector3.zero;
+                        foreach (int j in nb) avg += offset[j];
+                        next[gi] = Vector3.Lerp(offset[gi], avg / nb.Count, 0.5f);
+                    }
+                    offset = next;
+                }
+
+                // Shell vertices: one copy per original vertex (keeps UV seams), same weights and blendshape deltas.
+                shellOf = new Dictionary<int, int>();
+                int Copy(int i, Vector3 pos, Vector3 normal)
+                {
+                    int ni = v.Count;
+                    v.Add(pos); nrm.Add(normal); uv.Add(uv[i]); bw.Add(bw[i]);
+                    if (tan.Count > 0) tan.Add(tan[i]);
+                    foreach (var shape in shapes) foreach (var f in shape.frames) { f.dv.Add(f.dv[i]); f.dn.Add(f.dn[i]); f.dt.Add(f.dt[i]); }
+                    return ni;
+                }
+                foreach (int i in hairTris.Distinct())
+                {
+                    shellOf[i] = Copy(i, basePos[group[i]] + offset[group[i]], nrm[i]);
+                    uv[shellOf[i]] = hairUV;
+                }
+                int shellStart = headTris.Count;
+                for (int t = 0; t < hairTris.Count; t++) headTris.Add(shellOf[hairTris[t]]);
+                RecomputeNormals(v, nrm, headTris, shellStart, headTris.Count, shellOf.Values, group: null);
+
+                // Skirt: closes the gap between the shell's edge and the scalp along the hairline.
+                skirtQuads = 0;
+                for (int t = 0; t < hairTris.Count; t += 3)
+                    for (int e = 0; e < 3; e++)
+                    {
+                        int a = hairTris[t + e], b = hairTris[t + (e + 1) % 3], c = hairTris[t + (e + 2) % 3];
+                        if (edgeUse[Edge(group[a], group[b])] != 1) continue;
+                        // Outward = away from the hair triangle, along the surface.
+                        Vector3 mid = (v[a] + v[b]) * 0.5f;
+                        Vector3 outward = Vector3.ProjectOnPlane(mid - v[c], nrm[a] + nrm[b]).normalized;
+                        int a0 = Copy(a, basePos[group[a]] - nrm[a] * 0.001f, outward), b0 = Copy(b, basePos[group[b]] - nrm[b] * 0.001f, outward);
+                        int a1 = Copy(shellOf[a], v[shellOf[a]], outward), b1 = Copy(shellOf[b], v[shellOf[b]], outward);
+                        uv[a0] = uv[b0] = hairUV;
+                        // Unity's front faces wind clockwise seen from outside: order the quad so its normal is "outward".
+                        Vector3 fn = Vector3.Cross(v[b0] - v[a0], v[a1] - v[a0]);
+                        if (Vector3.Dot(fn, outward) >= 0) headTris.AddRange(new[] { a0, b0, a1, b0, b1, a1 });
+                        else headTris.AddRange(new[] { a0, a1, b0, b0, a1, b1 });
+                        skirtQuads++;
+                    }
+            }
 
             // ---------------------------------------------------------------- write the derived mesh
             // Written into the existing asset when there is one, so every reference to it (prefabs, scenes) stays valid.
@@ -238,8 +251,9 @@ namespace Numu.EditorTools.World
                 AssetDatabase.CreateAsset(mesh, assetPath);
             }
             else EditorUtility.SetDirty(mesh);
-            report = $"Stylised head: {eyesScaled} vertices reshaped around the eyes (x{s.eyeScale}), hair shell of {hairTris.Count / 3} triangles " +
-                     $"({shellOf.Count} vertices, {s.hairTop * 100f:F1} cm on the crown) with a {skirtQuads}-quad skirt; {mesh.vertexCount} vertices, {mesh.blendShapeCount} blendshapes.";
+            report = $"{Path.GetFileNameWithoutExtension(assetPath)}: {eyesScaled} vertices reshaped around the eyes (x{s.eyeScale})" +
+                     (s.hairShell ? $", hair shell of {hairTris.Count / 3} triangles ({s.hairTop * 100f:F1} cm on the crown) with a {skirtQuads}-quad skirt" : "") +
+                     $"; {mesh.vertexCount} vertices, {mesh.blendShapeCount} blendshapes.";
             return mesh;
         }
 

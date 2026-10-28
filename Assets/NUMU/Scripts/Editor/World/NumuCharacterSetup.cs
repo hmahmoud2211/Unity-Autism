@@ -15,7 +15,7 @@ namespace Numu.EditorTools.World
     /// </summary>
     public static class NumuCharacterSetup
     {
-        const string AvatarRoot = "Assets/ThirdParty/Rocketbox/Avatars";
+        public const string AvatarRoot = "Assets/ThirdParty/Rocketbox/Avatars";
         const string AnimRoot = "Assets/ThirdParty/Rocketbox/Animations";
         public const string Dir = "Assets/NUMU/Characters";
 
@@ -62,7 +62,7 @@ namespace Numu.EditorTools.World
             foreach (var dir in Directory.GetDirectories(AvatarRoot))
             {
                 string name = Path.GetFileName(dir);
-                SetupAvatar(name, name.StartsWith("Female") ? female : male);
+                SetupAvatar(name, name.StartsWith("Female") ? female : male, log);
                 avatars++;
             }
             int vrm = SetupVrmCharacters(female, male);
@@ -273,12 +273,17 @@ namespace Numu.EditorTools.World
 
         // ------------------------------------------------------------------ avatars
 
-        static void SetupAvatar(string name, AnimatorController controller)
+        static void SetupAvatar(string name, AnimatorController controller, StringBuilder log)
         {
             string fbx = $"{AvatarRoot}/{name}/{name}_facial.fbx";
             string tex = $"{AvatarRoot}/{name}/Textures";
             var importer = (ModelImporter)AssetImporter.GetAtPath(fbx);
-            var slots = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<Material>().Select(m => m.name).Distinct().ToList();
+            var style = ReadStyle(name);
+            // Material slots: the embedded ones on the first import, the remapped ones afterwards (a remapped FBX no
+            // longer lists its slots as sub-assets).
+            var slots = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<Material>().Select(m => m.name)
+                .Concat(importer.GetExternalObjectMap().Keys.Where(k => k.type == typeof(Material)).Select(k => k.name))
+                .Distinct().ToList();
             bool remapped = false;
             foreach (var slot in slots)
             {
@@ -286,12 +291,17 @@ namespace Numu.EditorTools.World
                 int us = slot.LastIndexOf('_');
                 string prefix = slot.Substring(0, us), part = slot.Substring(us + 1);
                 bool cards = part == "opacity";
+                // The NUMU cast style when its restyled textures exist: flat, softly shaded, matte, no normal maps.
+                var styled = Styled(name, cards ? "cards" : part);
                 var mat = NumuWorldMaterials.Lit($"M_{name}_{part}", new NumuWorldMaterials.Spec
                 {
-                    baseMap = AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_color.png"),
-                    normal = cards ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_normal.png"),
-                    maskMap = cards ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_mask.png"),
-                    smoothness = cards ? 0.3f : 0.95f,
+                    baseMap = styled != null ? styled : AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_color.png"),
+                    normal = cards || styled != null ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_normal.png"),
+                    maskMap = cards || styled != null ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{tex}/{prefix}_{part}_mask.png"),
+                    smoothness = styled != null ? (cards ? 0.2f : 0.15f) : cards ? 0.3f : 0.95f,
+                    // URP lights the back of double-sided hair cards as if facing away: a little self-light keeps them
+                    // from turning black.
+                    emission = cards && styled != null && style != null ? style.HairColor * 0.3f : Color.black,
                     alphaClip = cards,
                     cutoff = 0.5f,
                     doubleSided = cards,
@@ -319,25 +329,89 @@ namespace Numu.EditorTools.World
             face.face = smr;
             ConfigureFace(face);
             inst.AddComponent<EmotionController>().face = face;
+            if (style != null)
+            {
+                bool child = name.Contains("Child");
+                ApplyCastStyle(inst, smr, smr.sharedMesh, name, child, !style.cards && !Headscarf.Contains(name), style.HairColor,
+                    child ? new Vector3(1.14f, 1.12f, 1.1f) : new Vector3(1.07f, 1.06f, 1.05f), log);
+            }
             PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(name));
             Object.DestroyImmediate(inst);
         }
 
+        // ------------------------------------------------------------------ NUMU cast style
+
+        public const string StyledDir = "Assets/NUMU/Characters/Stylized/Textures";
+        /// <summary>Characters whose head texture is a headscarf rather than hair (no hair shell).</summary>
+        static readonly string[] Headscarf = { "Female_Adult_06", "Female_Child_02" };
+
+        /// <summary>A cast member's restyled texture (Tools/AssetPipeline/stylize_character.py), or null.</summary>
+        static Texture2D Styled(string name, string part) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{StyledDir}/{name.ToLowerInvariant()}_{part}.png");
+
+        [System.Serializable]
+        class CastStyle
+        {
+            public int[] skin, hair;
+            public bool cards;
+            public Color HairColor => new Color(hair[0] / 255f, hair[1] / 255f, hair[2] / 255f);
+        }
+
+        /// <summary>The colours the texture pipeline chose for a cast member (written next to its facial features).</summary>
+        static CastStyle ReadStyle(string name)
+        {
+            string path = $"{NumuCastFeatures.OutDir}/{name}_style.json";
+            return File.Exists(path) ? JsonUtility.FromJson<CastStyle>(File.ReadAllText(path)) : null;
+        }
+
         /// <summary>
-        /// NUMU's serious-game character style (reference: JeStiMulE): the Rocketbox boy with repainted, flattened
-        /// textures (Tools/AssetPipeline/stylize_character.py), matte materials without normal maps for soft, simple
-        /// shading, a slightly longer and narrower head, and a calm, slightly shy resting face. Same humanoid rig,
-        /// animations and 175 facial blendshapes as the original.
+        /// NUMU's face construction, shared by the whole cast (main reference: Character_Expression_Reference.png):
+        /// larger eyes and, for short hair painted on the scalp, a modelled hair cap (a derived mesh, see
+        /// <see cref="NumuStylizedHead"/>; the FBX is untouched); a larger head (more for children); a calm resting face
+        /// with slightly wide eyes. Humanoid animation never writes bone scale, so the head size holds in every clip.
+        /// </summary>
+        static void ApplyCastStyle(GameObject inst, SkinnedMeshRenderer smr, Mesh source, string meshName, bool child, bool hairShell, Color hair, Vector3 headScale, StringBuilder log)
+        {
+            var mats = smr.sharedMaterials;
+            int headSub = System.Array.FindIndex(mats, m => m != null && m.name.EndsWith("_head", System.StringComparison.OrdinalIgnoreCase));
+            if (headSub < 0) return;
+            smr.sharedMesh = source;
+            var settings = new NumuStylizedHead.Settings
+            {
+                eyeScale = child ? 1.22f : 1.16f,
+                hairShell = hairShell,
+                hairColor = hair,
+                hairTop = child ? 0.013f : 0.008f,
+                hairSide = child ? 0.008f : 0.005f,
+            };
+            smr.sharedMesh = NumuStylizedHead.Build(smr, headSub, (Texture2D)mats[headSub].GetTexture("_BaseMap"), $"{Dir}/{meshName}_Meshes.asset", settings, out string report);
+            var lb = smr.localBounds;
+            lb.Expand(0.06f);
+            smr.localBounds = lb;
+            // The Rocketbox head bone's local X is vertical, Y is depth and Z is width.
+            var headBone = inst.GetComponent<Animator>().GetBoneTransform(HumanBodyBones.Head);
+            if (headBone != null) headBone.localScale = headScale;
+            // Resting look: eyes a little wider, inner brows slightly raised; light enough that squints still read.
+            inst.GetComponent<NumuFacialExpressions>().baseShapes = new List<NumuFacialExpressions.ShapeWeight>
+            {
+                W("AK_21_EyeWideLeft", 0.2f), W("AK_22_EyeWideRight", 0.2f), W("AK_03_BrowInnerUp", 0.1f),
+            };
+            log?.AppendLine(report);
+        }
+
+        /// <summary>
+        /// The player, NUMU's main character and the template for the cast, after the main style reference
+        /// (Character_Expression_Reference.png): the Rocketbox boy with the shared cast construction
+        /// (<see cref="ApplyCastStyle"/>), restyled textures (ginger hair with a side-swept fringe, dark brown eyes, a green
+        /// sweater with tonal stripes) and a large, round head. Same humanoid rig, animations and 175 facial blendshapes.
         /// </summary>
         static void SetupStylizedBoy(AnimatorController controller, StringBuilder log)
         {
-            const string texDir = "Assets/NUMU/Characters/Stylized/Textures";
-            var headTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texDir}/numu_boy_head.png");
-            var bodyTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texDir}/numu_boy_body.png");
+            var headTex = Styled(StylizedBoy, "head");
+            var bodyTex = Styled(StylizedBoy, "body");
             var source = Prefab("Male_Child_01");
             if (headTex == null || bodyTex == null || source == null) return;
-            var head = NumuWorldMaterials.Lit("M_NUMU_Boy_Head", new NumuWorldMaterials.Spec { baseMap = headTex, smoothness = 0.18f });
-            var body = NumuWorldMaterials.Lit("M_NUMU_Boy_Body", new NumuWorldMaterials.Spec { baseMap = bodyTex, smoothness = 0.08f });
+            var head = NumuWorldMaterials.Lit("M_NUMU_Boy_Head", new NumuWorldMaterials.Spec { baseMap = headTex, smoothness = 0.15f });
+            var body = NumuWorldMaterials.Lit("M_NUMU_Boy_Body", new NumuWorldMaterials.Spec { baseMap = bodyTex, smoothness = 0.12f });
             var inst = (GameObject)PrefabUtility.InstantiatePrefab(source);
             PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
             inst.name = $"Char_{StylizedBoy}";
@@ -351,29 +425,19 @@ namespace Numu.EditorTools.World
                     else if (mats[i].name.EndsWith("_body")) mats[i] = body;
                 }
                 r.sharedMaterials = mats;
-                // Larger eyes and a modelled hair volume (derived mesh; the FBX is untouched).
-                int headSub = System.Array.IndexOf(mats, head);
-                if (headSub < 0) continue;
-                r.sharedMesh = NumuStylizedHead.Build(r, headSub, headTex, $"{Dir}/{StylizedBoy}_Meshes.asset", new NumuStylizedHead.Settings(), out string report);
-                var lb = r.localBounds;
-                lb.Expand(0.06f);
-                r.localBounds = lb;
-                log?.AppendLine(report);
             }
             var anim = inst.GetComponent<Animator>();
             anim.runtimeAnimatorController = controller;
-            // A larger head with a longer, slightly narrower face, as in the references (humanoid animation never
-            // writes bone scale). The Rocketbox head bone's local X is vertical, Y is depth and Z is width.
-            var headBone = anim.GetBoneTransform(HumanBodyBones.Head);
-            if (headBone != null) headBone.localScale = new Vector3(1.23f, 1.13f, 1.09f);
+            // The main character after the main reference: the shared cast construction from the original boy mesh,
+            // with a large, round head.
+            var style = ReadStyle("NUMU_Boy");
+            var smr = inst.GetComponentsInChildren<SkinnedMeshRenderer>().OrderByDescending(x => x.sharedMesh.blendShapeCount).First();
+            var original = AssetDatabase.LoadAllAssetsAtPath($"{AvatarRoot}/Male_Child_01/Male_Child_01_facial.fbx").OfType<Mesh>().OrderByDescending(m => m.blendShapeCount).First();
+            ApplyCastStyle(inst, smr, original, StylizedBoy, true, true, style != null ? style.HairColor : new Color(0.73f, 0.49f, 0.26f),
+                new Vector3(1.2f, 1.17f, 1.15f), log);
             var face = inst.GetComponent<NumuFacialExpressions>();
-            // Resting look: eyes a little wider (the eyes are already enlarged in the mesh), a soft glance down,
-            // inner brows slightly raised. Kept light so squints (happy, angry) still read.
-            face.baseShapes = new List<NumuFacialExpressions.ShapeWeight>
-            {
-                W("AK_21_EyeWideLeft", 0.2f), W("AK_22_EyeWideRight", 0.2f), W("AK_11_EyeLookDownLeft", 0.1f), W("AK_12_EyeLookDownRight", 0.1f),
-                W("AK_03_BrowInnerUp", 0.12f),
-            };
+            face.baseShapes.Add(W("AK_11_EyeLookDownLeft", 0.08f));
+            face.baseShapes.Add(W("AK_12_EyeLookDownRight", 0.08f));
             PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(StylizedBoy));
             Object.DestroyImmediate(inst);
         }
@@ -445,6 +509,13 @@ namespace Numu.EditorTools.World
                     // VRoid has no disgust shapes: lowered brows, narrowed eyes, a pressed, downturned mouth.
                     emotion = NumuEmotion.Disgust,
                     shapes = { W("Fcl_BRW_Angry", 0.6f), W("Fcl_EYE_Angry", 0.5f), W("Fcl_MTH_Angry", 0.45f), W("Fcl_MTH_Sorrow", 0.4f), W("Fcl_MTH_E", 0.3f) },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    // VRoid has no asymmetric brows: worried brows and a small, downturned mouth; the head tilt and the
+                    // head scratch (EmotionController) carry the rest.
+                    emotion = NumuEmotion.Confused,
+                    shapes = { W("Fcl_BRW_Sorrow", 0.5f), W("Fcl_BRW_Surprised", 0.3f), W("Fcl_MTH_Down", 0.4f), W("Fcl_MTH_E", 0.2f) },
                 },
             };
             face.blinkShapes = new List<string> { "Fcl_EYE_Close" };
@@ -539,6 +610,18 @@ namespace Numu.EditorTools.World
                     },
                 },
             };
+            face.presets.Add(new NumuFacialExpressions.ExpressionPreset
+            {
+                // One brow up and one down, a slight squint on the lowered side, mouth pulled to one side and pursed
+                // (with the head tilt and the head scratch from EmotionController).
+                emotion = NumuEmotion.Confused,
+                shapes =
+                {
+                    W("AK_04_BrowOuterUpLeft", 1f), W("AU_02_L_OuterBrowRaiser", 0.6f), W("AK_03_BrowInnerUp", 0.3f),
+                    W("AK_02_BrowDownRight", 0.8f), W("AK_20_EyeSquintRight", 0.35f), W("AK_21_EyeWideLeft", 0.35f),
+                    W("AK_33_MouthLeft", 0.6f), W("AK_42_MouthShrugLower", 0.35f), W("AK_38_MouthPucker", 0.25f), W("AK_37_MouthPressRight", 0.3f),
+                },
+            });
             face.blinkShapes = new List<string> { "AK_09_EyeBlinkLeft", "AK_10_EyeBlinkRight" };
             face.talkShapes = new List<NumuFacialExpressions.ShapeWeight> { W("AK_25_JawOpen", 0.3f), W("AA_VI_10_aa", 0.45f) };
         }

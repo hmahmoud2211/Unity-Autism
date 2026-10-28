@@ -11,13 +11,16 @@ namespace Numu.World
         HandsToFace,
         /// <summary>Both hands raised in front of the chin, palms out (fear).</summary>
         HandsUpDefensive,
+        /// <summary>One hand scratching the side of the head (confused).</summary>
+        ScratchHead,
     }
 
     /// <summary>
-    /// Reusable emotion performer for any character, in gameplay or cutscenes: sets the facial expression
-    /// (blendshapes, via <see cref="NumuFacialExpressions"/>), plays a matching body gesture and/or hand pose
-    /// and points the gaze. Seven emotions: neutral, happy, sad, angry, fear, surprise and disgust.
-    /// Hand poses use the animator's IK pass, so they work on any humanoid on top of any clip (idle, talk…).
+    /// Reusable emotion performer for every NUMU character, in gameplay or cutscenes: sets the facial expression
+    /// (blendshapes, via <see cref="NumuFacialExpressions"/>), supports it with a head pose (tilt, lowered or raised
+    /// head), plays a matching body gesture and/or hand pose, and points the gaze. Eight emotions: neutral, happy, sad,
+    /// angry, fear (afraid), surprise, disgust and confused. Head and hand poses are applied on top of any clip (idle,
+    /// talk…) through the animator's IK pass and after animation, so they work on any humanoid.
     /// </summary>
     [RequireComponent(typeof(Animator))]
     public class EmotionController : MonoBehaviour
@@ -32,12 +35,19 @@ namespace Numu.World
         public string fearGesture = "Nervous";
         public string surpriseGesture = "";
         public string disgustGesture = "";
+        public string confusedGesture = "";
 
         [Header("Hand pose per emotion (arm IK)")]
         public HandGesture surpriseHands = HandGesture.HandsToFace;
         public HandGesture fearHands = HandGesture.HandsUpDefensive;
+        public HandGesture confusedHands = HandGesture.ScratchHead;
         [Tooltip("Seconds to raise or lower the hands.")]
         public float handBlendTime = 0.35f;
+
+        [Header("Head pose supporting the face")]
+        public bool headPose = true;
+        [Tooltip("Seconds to settle into a new head pose.")]
+        public float headBlendTime = 0.4f;
 
         public NumuEmotion Current { get; private set; }
         public HandGesture CurrentHands { get; private set; }
@@ -46,6 +56,24 @@ namespace Numu.World
         Transform _leftEye, _rightEye;
         HandGesture _shownHands;
         float _handWeight;
+        Vector3 _headPose, _headPoseVelocity;
+        float _intensity = 1f;
+
+        /// <summary>Head pose per emotion in degrees: pitch (down +), yaw (turn), roll (tilt).</summary>
+        public static Vector3 HeadPoseFor(NumuEmotion e)
+        {
+            switch (e)
+            {
+                case NumuEmotion.Happy: return new Vector3(-3f, 0f, 5f);     // chin up a little, friendly tilt
+                case NumuEmotion.Sad: return new Vector3(14f, 0f, 4f);       // head lowered
+                case NumuEmotion.Angry: return new Vector3(7f, 0f, 0f);      // head lowered, glaring
+                case NumuEmotion.Fear: return new Vector3(5f, -7f, 0f);      // pulled down and slightly away
+                case NumuEmotion.Surprise: return new Vector3(-6f, 0f, 0f);  // head back
+                case NumuEmotion.Disgust: return new Vector3(-4f, 10f, -3f); // turning away
+                case NumuEmotion.Confused: return new Vector3(0f, 6f, -11f); // a clear tilt, toward the head-scratching hand
+                default: return Vector3.zero;
+            }
+        }
 
         void Awake()
         {
@@ -69,6 +97,7 @@ namespace Numu.World
         public void Show(NumuEmotion emotion, float intensity = 1f, bool withGesture = false)
         {
             Current = emotion;
+            _intensity = intensity;
             if (face != null) face.SetExpression(emotion, intensity);
             if (withGesture)
             {
@@ -122,12 +151,13 @@ namespace Numu.World
                 case NumuEmotion.Fear: return fearGesture;
                 case NumuEmotion.Surprise: return surpriseGesture;
                 case NumuEmotion.Disgust: return disgustGesture;
+                case NumuEmotion.Confused: return confusedGesture;
                 default: return null;
             }
         }
 
         public HandGesture HandsFor(NumuEmotion e) =>
-            e == NumuEmotion.Surprise ? surpriseHands : e == NumuEmotion.Fear ? fearHands : HandGesture.None;
+            e == NumuEmotion.Surprise ? surpriseHands : e == NumuEmotion.Fear ? fearHands : e == NumuEmotion.Confused ? confusedHands : HandGesture.None;
 
         // ------------------------------------------------------------------ hand poses
 
@@ -136,9 +166,11 @@ namespace Numu.World
             if (CurrentHands != HandGesture.None) _shownHands = CurrentHands;
             float target = CurrentHands == HandGesture.None ? 0f : 1f;
             _handWeight = Mathf.MoveTowards(_handWeight, target, Time.deltaTime / Mathf.Max(0.01f, handBlendTime));
+            var pose = headPose ? HeadPoseFor(Current) * _intensity : Vector3.zero;
+            _headPose = Vector3.SmoothDamp(_headPose, pose, ref _headPoseVelocity, headBlendTime * 0.5f);
         }
 
-        struct HandPlan { public Vector3 wrist, elbow; public Quaternion rotation; }
+        struct HandPlan { public bool active; public Vector3 wrist, elbow; public Quaternion rotation; }
 
         HandPlan Plan(int side, Transform hand)
         {
@@ -161,7 +193,17 @@ namespace Numu.World
             float handLen = midKnuckle != null ? Vector3.Distance(hand.position, midKnuckle.position) * 2.05f : 0.15f;
 
             Vector3 tip, fingers, thumbSide, elbow;
-            if (_shownHands == HandGesture.HandsToFace)
+            if (_shownHands == HandGesture.ScratchHead)
+            {
+                // Right hand only, resting on the top-side of the head: fingers reaching across the crown, palm down,
+                // elbow raised and out.
+                if (side < 0) return new HandPlan { active = false };
+                tip = eyes + right * 0.035f * faceScale + up * 0.095f * faceHeight - fwd * 0.035f * faceScale;
+                fingers = (up * 0.35f - right - fwd * 0.1f).normalized;
+                thumbSide = -fwd;
+                elbow = chestPos + right * 0.3f + up * 0.24f;
+            }
+            else if (_shownHands == HandGesture.HandsToFace)
             {
                 // Fingertips on the cheeks beside the mouth; fingers up and leaning in, palms toward the face.
                 tip = mouth + right * side * 0.034f * faceScale + up * 0.03f * faceHeight + fwd * 0.012f * faceScale;
@@ -180,6 +222,7 @@ namespace Numu.World
             thumbSide = Vector3.ProjectOnPlane(thumbSide, fingers).normalized;
             return new HandPlan
             {
+                active = true,
                 wrist = tip - fingers * handLen,
                 elbow = elbow,
                 rotation = HandRotation(side, hand, fingers, thumbSide),
@@ -211,6 +254,7 @@ namespace Numu.World
             float w = Mathf.SmoothStep(0f, 1f, _handWeight);
             foreach (var (goal, hint, plan) in new[] { (AvatarIKGoal.LeftHand, AvatarIKHint.LeftElbow, Plan(-1, lh)), (AvatarIKGoal.RightHand, AvatarIKHint.RightElbow, Plan(1, rh)) })
             {
+                if (!plan.active) continue;
                 _anim.SetIKPositionWeight(goal, w);
                 _anim.SetIKPosition(goal, plan.wrist);
                 _anim.SetIKHintPositionWeight(hint, w);
@@ -220,16 +264,30 @@ namespace Numu.World
 
         void LateUpdate()
         {
+            if (_anim == null) return;
+            ApplyHeadPose();
             // The IK pass places the wrists; the hand orientation is set on the bones afterwards, exactly.
-            if (_anim == null || _handWeight <= 0f || _shownHands == HandGesture.None) return;
+            if (_handWeight <= 0f || _shownHands == HandGesture.None) return;
             float w = Mathf.SmoothStep(0f, 1f, _handWeight);
             foreach (var (bone, side) in new[] { (HumanBodyBones.LeftHand, -1), (HumanBodyBones.RightHand, 1) })
             {
                 var hand = _anim.GetBoneTransform(bone);
                 if (hand == null) continue;
                 var plan = Plan(side, hand);
-                hand.rotation = Quaternion.Slerp(hand.rotation, plan.rotation, w);
+                if (plan.active) hand.rotation = Quaternion.Slerp(hand.rotation, plan.rotation, w);
             }
+        }
+
+        /// <summary>Adds the emotion's head pose on top of the animation: 40% in the neck, the rest in the head.</summary>
+        void ApplyHeadPose()
+        {
+            if (_headPose.sqrMagnitude < 0.01f) return;
+            var head = _anim.GetBoneTransform(HumanBodyBones.Head);
+            var neck = _anim.GetBoneTransform(HumanBodyBones.Neck);
+            if (head == null) return;
+            var q = Quaternion.AngleAxis(_headPose.z, transform.forward) * Quaternion.AngleAxis(_headPose.x, transform.right) * Quaternion.AngleAxis(_headPose.y, Vector3.up);
+            if (neck != null) neck.rotation = Quaternion.Slerp(Quaternion.identity, q, 0.4f) * neck.rotation;
+            head.rotation = Quaternion.Slerp(Quaternion.identity, q, neck != null ? 0.6f : 1f) * head.rotation;
         }
     }
 }

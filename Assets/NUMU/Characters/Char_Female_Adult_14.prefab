@@ -9,6 +9,22 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: b1ede64a9c1f94b7ba02c0a7ea36b498, type: 2}
+    - target: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_AABB.m_Extent.x
+      value: 0.9116751
+      objectReference: {fileID: 0}
+    - target: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_AABB.m_Extent.y
+      value: 0.22539385
+      objectReference: {fileID: 0}
+    - target: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_AABB.m_Extent.z
+      value: 0.6442957
+      objectReference: {fileID: 0}
+    - target: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
       propertyPath: m_SkinnedMotionVectors
       value: 0
       objectReference: {fileID: 0}
@@ -79,6 +95,18 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8804637712421891867, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.07
+      objectReference: {fileID: 0}
+    - target: {fileID: 8804637712421891867, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 8804637712421891867, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.05
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -282,10 +310,38 @@ MonoBehaviour:
       weight: 0.35
     - shape: AK_32_MouthFunnel
       weight: 0.45
+  - emotion: 7
+    shapes:
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 1
+    - shape: AU_02_L_OuterBrowRaiser
+      weight: 0.6
+    - shape: AK_03_BrowInnerUp
+      weight: 0.3
+    - shape: AK_02_BrowDownRight
+      weight: 0.8
+    - shape: AK_20_EyeSquintRight
+      weight: 0.35
+    - shape: AK_21_EyeWideLeft
+      weight: 0.35
+    - shape: AK_33_MouthLeft
+      weight: 0.6
+    - shape: AK_42_MouthShrugLower
+      weight: 0.35
+    - shape: AK_38_MouthPucker
+      weight: 0.25
+    - shape: AK_37_MouthPressRight
+      weight: 0.3
   emotion: 0
   intensity: 1
   transitionTime: 0.35
-  baseShapes: []
+  baseShapes:
+  - shape: AK_21_EyeWideLeft
+    weight: 0.2
+  - shape: AK_22_EyeWideRight
+    weight: 0.2
+  - shape: AK_03_BrowInnerUp
+    weight: 0.1
   autoBlink: 1
   blinkShapes:
   - AK_09_EyeBlinkLeft
@@ -317,9 +373,13 @@ MonoBehaviour:
   fearGesture: Nervous
   surpriseGesture: 
   disgustGesture: 
+  confusedGesture: 
   surpriseHands: 1
   fearHands: 2
+  confusedHands: 3
   handBlendTime: 0.35
+  headPose: 1
+  headBlendTime: 0.4
 --- !u!137 &6543730273910727332 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: -9081702977796096035, guid: 1c86050bb4f504708b0c7a80ca731473, type: 3}

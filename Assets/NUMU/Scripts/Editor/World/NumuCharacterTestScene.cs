@@ -10,11 +10,14 @@ namespace Numu.EditorTools.World
     /// <summary>
     /// Character test scene (Assets/Scenes/NUMU_CharacterTest.unity): the NUMU boy on a small town square, framed like
     /// the expression reference (head and torso, soft light, blurred background), showing the surprised expression
-    /// with hands on start. Number keys switch emotions in Play Mode (see <see cref="NumuExpressionShowcase"/>).
+    /// with hands on start, plus the whole cast in a lineup beside him. Number keys switch everyone's emotion in Play Mode
+    /// (see <see cref="NumuExpressionShowcase"/>).
     /// </summary>
     public static class NumuCharacterTestScene
     {
         public const string ScenePath = "Assets/Scenes/NUMU_CharacterTest.unity";
+        /// <summary>Where the cast lineup starts (x) and the spacing between characters.</summary>
+        public const float CastX = 6f, CastSpacing = 0.85f;
         const string Dir = "Assets/NUMU/Characters/TestScene";
 
         [MenuItem("NUMU/Characters/Build Character Test Scene")]
@@ -46,7 +49,7 @@ namespace Numu.EditorTools.World
 
             // Town square: pale paving, an ochre house, a grey wall and a lamp post (all far enough to be blurred).
             var paving = Mat("M_Test_Paving", new Color(0.78f, 0.77f, 0.74f), 0.15f);
-            Block("Ground", new Vector3(0, -0.05f, -6f), new Vector3(40, 0.1f, 30), paving);
+            Block("Ground", new Vector3(6, -0.05f, -6f), new Vector3(52, 0.1f, 30), paving);
             Block("House", new Vector3(-3.5f, 3f, -11f), new Vector3(9, 6, 4), Mat("M_Test_Ochre", new Color(0.86f, 0.58f, 0.36f), 0.1f));
             Block("Roof", new Vector3(-3.5f, 6.4f, -11f), new Vector3(9.4f, 0.8f, 4.4f), Mat("M_Test_Roof", new Color(0.62f, 0.36f, 0.26f), 0.1f));
             Block("Wall", new Vector3(5f, 1.1f, -8f), new Vector3(10, 2.2f, 0.5f), Mat("M_Test_Wall", new Color(0.72f, 0.72f, 0.72f), 0.1f));
@@ -61,6 +64,21 @@ namespace Numu.EditorTools.World
             var showcase = boy.AddComponent<NumuExpressionShowcase>();
             showcase.character = boy.GetComponent<EmotionController>();
             showcase.startEmotion = NumuEmotion.Surprise;
+
+            // The whole cast in a row beside him (x 6..15), facing the same way, to check the style is consistent.
+            var cast = new System.Collections.Generic.List<EmotionController>();
+            var lineup = new GameObject("Cast Lineup").transform;
+            string[] names = { NumuCharacterSetup.StylizedBoy, "Female_Child_01", "Female_Child_02", "Male_Child_02", "Male_Child_01",
+                               "Female_Adult_06", "Male_Adult_08", "Female_Adult_14", "Female_Adult_12", "Male_Adult_13", "Male_Adult_02", "Female_Adult_01" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                var p = NumuCharacterSetup.Prefab(names[i]);
+                if (p == null) continue;
+                var c = (GameObject)PrefabUtility.InstantiatePrefab(p, lineup);
+                c.transform.SetPositionAndRotation(new Vector3(CastX + i * CastSpacing, 0f, 0f), Quaternion.identity);
+                cast.Add(c.GetComponent<EmotionController>());
+            }
+            showcase.cast = cast.ToArray();
 
             // Camera framed like the reference: head and torso, slightly below eye level.
             var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
@@ -79,7 +97,7 @@ namespace Numu.EditorTools.World
             volume.sharedProfile = Profile();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
-            return $"Built {ScenePath}: Char_NUMU_Boy showing Surprise with hands; keys 1-7 switch emotions, H toggles hands.";
+            return $"Built {ScenePath}: Char_NUMU_Boy showing Surprise with hands, and a lineup of {cast.Count} cast members; keys 1-8 switch emotions, H toggles hands.";
         }
 
         static Material Mat(string name, Color c, float smoothness) =>
