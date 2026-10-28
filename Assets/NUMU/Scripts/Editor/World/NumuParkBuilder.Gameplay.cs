@@ -24,7 +24,7 @@ namespace Numu.EditorTools.World
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
             go.name = displayName;
             go.transform.SetPositionAndRotation(pos, Quaternion.Euler(0, yaw, 0));
-            go.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.NpcController(avatar.StartsWith("Female"));
+            go.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.NpcController(NumuCharacterSetup.IsFemale(avatar));
             foreach (var smr in go.GetComponentsInChildren<SkinnedMeshRenderer>())
             {
                 smr.shadowCastingMode = ShadowCastingMode.On;
@@ -69,12 +69,14 @@ namespace Numu.EditorTools.World
             var g = Group("Characters");
 
             // ---------------------------------------------------------------- player (third person)
-            var player = SpawnCharacter("Male_Child_01", "Player", g, OnGround(PlayerStart), 0f);
-            player.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.PlayerController;
+            string avatar = NumuCharacterSetup.PlayerAvatar;
+            var player = SpawnCharacter(avatar, "Player", g, OnGround(PlayerStart), 0f);
+            player.GetComponent<Animator>().runtimeAnimatorController = NumuCharacterSetup.PlayerControllerFor(avatar);
             var cc = player.AddComponent<CharacterController>();
-            cc.height = 1.4f;
+            float capsule = Mathf.Clamp(NumuWorldScaffold.Bounds(player).size.y * 0.95f, 1.2f, 1.75f);
+            cc.height = capsule;
             cc.radius = 0.22f;
-            cc.center = new Vector3(0, 0.72f, 0);
+            cc.center = new Vector3(0, capsule * 0.5f + 0.02f, 0);
             cc.stepOffset = 0.3f;
             cc.slopeLimit = 45f;
             cc.skinWidth = 0.03f;
@@ -179,7 +181,9 @@ namespace Numu.EditorTools.World
             MakeNpc(mum, "Sit", player.transform);
             mum.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Happy, 0.35f);
 
-            var helper = SpawnCharacter("Male_Adult_02", "Park helper", g, OnGround(new Vector3(4.2f, 0, 6.6f)), 70f);
+            // Anime park visitor (VRoid); falls back to the Rocketbox adult if the VRM isn't imported.
+            string helperAvatar = NumuCharacterSetup.Prefab("VRM_SakuradaFumiriya") != null ? "VRM_SakuradaFumiriya" : "Male_Adult_02";
+            var helper = SpawnCharacter(helperAvatar, "Park helper", g, OnGround(new Vector3(4.2f, 0, 6.6f)), 70f);
             MakeNpc(helper, "Listen", player.transform, "LookAround", "Idle");
             helper.GetComponent<NumuFacialExpressions>().SetExpression(NumuEmotion.Neutral, 1f);
             Blocker(helper, 0.28f, 1.8f);

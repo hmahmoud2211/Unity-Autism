@@ -1,5 +1,48 @@
 # NUMU characters and camera
 
+## Anime characters (VRoid / VRM): current direction
+
+**Pipeline:** VRoid Studio exports `.vrm`. UniVRM v0.131.4 imports it into Unity 6 as VRM 1.0, migrating VRM 0.x files, with URP MToon10 materials. `NumuCharacterSetup.SetupVrmCharacters` then:
+- builds a NUMU prefab in `Assets/NUMU/Characters/Char_VRM_<id>.prefab` with the shared humanoid animator
+- adds VRoid face presets
+- merges sub-meshes that share a material (draw calls)
+
+The imported `.vrm` files are never modified. To add a character:
+1. Put `<Id>/<Id>.vrm` under `Assets/ThirdParty/VRoid/`.
+2. Add `<Id>` to `VrmFemale` in `NumuCharacterSetup`.
+3. Rebuild the world.
+
+**Imported now:** two official VRoid Project samples, both licensed for commercial use, modification and redistribution with no credit required; the licence is read from each file's metadata.
+- **Sendagaya Shino:** the player in all four worlds. 31k triangles, 17 materials.
+- **Sakurada Fumiriya:** the Park's anime visitor. 40k triangles, 17 materials.
+
+Both are 1.65–1.9 m: **teen/young-adult characters, not children.** They are not resized to pose as children.
+
+**Faces:** VRoid faces carry joy, angry, sorrow, fun and surprised shapes for brows, eyes and mouth, plus blink and lip-sync shapes. `NumuFacialExpressions` combines them:
+
+| Emotion | VRoid shapes |
+|---|---|
+| Happy | brows fun, eyes joy (55%), mouth joy |
+| Sad | brows sorrow, eyes sorrow, mouth sorrow, mouth down |
+| Angry | brows angry, eyes angry, mouth angry |
+| Fear (custom: VRoid has none) | brows sorrow, a little brow surprised, eyes surprised, mouth slightly open and stretched |
+| Surprise | brows surprised, eyes surprised, mouth surprised |
+
+Blinking uses `Fcl_EYE_Close`; talking uses `Fcl_MTH_A`. The component runs after UniVRM's runtime (execution order 11100 > 11000), so NUMU controls the face while UniVRM keeps the hair and clothes spring bones. Sheets: `Screenshots/Anime/10_anime_face_*.jpg` (in-game) and `20_expression_sheet_preview.jpg`. Fear and surprise differ mainly in brows and mouth shape; have the clinical team review them.
+
+**Still missing: anime children.** No licensed anime child model was available. The children the child must read (Mia, Lina, Omar…) stay on the expressive Rocketbox child models until anime children exist. To make them:
+1. Install VRoid Studio (free): https://vroid.com/en/studio
+2. Create each child, using a shorter body height, larger head and child face presets.
+3. Export as **VRM 1.0** (or 0.x). In the export dialog, reduce materials (atlas) and polygons to keep mobile cost down.
+4. Drop the file in `Assets/ThirdParty/VRoid/<Id>/<Id>.vrm` and tell me. Faces are set up automatically and checked with the inspector.
+
+**Mobile cost (Editor, Park start, Mobile tier):**
+- **Before anime characters:** 454k triangles, 268 draw calls.
+- **After, with the sub-mesh merge:** 647k triangles, 362 draw calls.
+- **Without the merge it was 632 draw calls:** the player had 67 slots, now 17.
+
+The VRoid samples are heavy for phones. Re-export them, or any new characters, from VRoid Studio with fewer polygons, a material atlas and 1024 textures before adding many on screen. Device frame rate is not tested.
+
 ## Realistic Modern Character Pack: status
 
 **Not imported yet.** The pack (publisher Chandan kumar singh) is a paid asset: $29.99, Standard Unity Asset Store EULA.

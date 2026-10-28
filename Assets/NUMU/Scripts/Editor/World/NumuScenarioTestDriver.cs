@@ -83,9 +83,9 @@ namespace Numu.EditorTools.World
             if (now - _started > 240) { Finish("TIMEOUT"); return; }
 
             // Works with the data-driven activities and with the Park's original swing activity.
-            var scenario = Object.FindFirstObjectByType<NumuConversationScenario>();
-            var park = scenario == null ? Object.FindFirstObjectByType<NumuEmotionScenario>() : null;
-            var ui = Object.FindFirstObjectByType<NumuWorldUI>();
+            var scenario = Object.FindAnyObjectByType<NumuConversationScenario>();
+            var park = scenario == null ? Object.FindAnyObjectByType<NumuEmotionScenario>() : null;
+            var ui = Object.FindAnyObjectByType<NumuWorldUI>();
             if ((scenario == null && park == null) || ui == null) { Finish("no scenario/ui in scene"); return; }
             var player = scenario != null ? scenario.player : park.player;
             var interactable = scenario != null ? scenario.interactable : park.interactable;
@@ -97,6 +97,8 @@ namespace Numu.EditorTools.World
             switch (_phase)
             {
                 case 10:
+                    // The view preference persists between sessions: start from third person explicitly.
+                    view.SetView(NumuFollowCamera.View.ThirdPerson);
                     Shot("tp_start");
                     _walkStart = player.transform.position;
                     Stick(player, new Vector2(0f, 1f));

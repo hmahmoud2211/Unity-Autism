@@ -1,0 +1,217 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &195651829459375921
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 6630217386328927717, guid: c9eee64c304d4447eb8a7c74bec88ee2, type: 2}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_SkinnedMotionVectors
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 3646227874216707543, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 5003607618599812424, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 4207425947353151495, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[4]'
+      value: 
+      objectReference: {fileID: -906174247718291165, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -5694092435888646316, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[5]'
+      value: 
+      objectReference: {fileID: -6539692898171947007, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -5352740006539593630, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 7974588679592339717, guid: c9eee64c304d4447eb8a7c74bec88ee2, type: 2}
+    - target: {fileID: -5352740006539593630, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -5352740006539593630, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_SkinnedMotionVectors
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -5352740006539593630, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 6619082770674941510, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    - target: {fileID: -1728013695380148634, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Name
+      value: Char_VRM_SakuradaFumiriya
+      objectReference: {fileID: 0}
+    - target: {fileID: 4870552773557632513, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8543def31d8b44c5c9799a0e5413a1e9, type: 2}
+    - target: {fileID: 4870552773557632513, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_CullingMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5159078012444724336, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7140606858727328969, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: c9eee64c304d4447eb8a7c74bec88ee2, type: 2}
+    - target: {fileID: 7140606858727328969, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 7140606858727328969, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: m_SkinnedMotionVectors
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7140606858727328969, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      propertyPath: 'm_Materials.Array.data[8]'
+      value: 
+      objectReference: {fileID: -1399606748134662826, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: -1728013695380148634, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7579875453216718823}
+  m_SourcePrefab: {fileID: -3956505258223990651, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+--- !u!137 &7039003448586394616 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7140606858727328969, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+  m_PrefabInstance: {fileID: 195651829459375921}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7688705585886263639 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -1728013695380148634, guid: f8754309828df4f2d99afbde3213744a, type: 3}
+  m_PrefabInstance: {fileID: 195651829459375921}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7579875453216718823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7688705585886263639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86e04a072573b46f28de5545c5ec0307, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Numu.World.NumuFacialExpressions
+  face: {fileID: 7039003448586394616}
+  presets:
+  - emotion: 0
+    shapes: []
+  - emotion: 1
+    shapes:
+    - shape: Fcl_BRW_Fun
+      weight: 0.8
+    - shape: Fcl_EYE_Joy
+      weight: 0.55
+    - shape: Fcl_MTH_Joy
+      weight: 0.85
+  - emotion: 2
+    shapes:
+    - shape: Fcl_BRW_Sorrow
+      weight: 1
+    - shape: Fcl_EYE_Sorrow
+      weight: 1
+    - shape: Fcl_MTH_Sorrow
+      weight: 1
+    - shape: Fcl_MTH_Down
+      weight: 0.4
+  - emotion: 3
+    shapes:
+    - shape: Fcl_BRW_Angry
+      weight: 1
+    - shape: Fcl_EYE_Angry
+      weight: 0.8
+    - shape: Fcl_MTH_Angry
+      weight: 0.9
+  - emotion: 4
+    shapes:
+    - shape: Fcl_BRW_Sorrow
+      weight: 1
+    - shape: Fcl_BRW_Surprised
+      weight: 0.3
+    - shape: Fcl_EYE_Surprised
+      weight: 1
+    - shape: Fcl_MTH_Surprised
+      weight: 0.35
+    - shape: Fcl_MTH_E
+      weight: 0.4
+  - emotion: 5
+    shapes:
+    - shape: Fcl_BRW_Surprised
+      weight: 1
+    - shape: Fcl_EYE_Surprised
+      weight: 1
+    - shape: Fcl_MTH_Surprised
+      weight: 0.9
+  emotion: 0
+  intensity: 1
+  transitionTime: 0.35
+  autoBlink: 1
+  blinkShapes:
+  - Fcl_EYE_Close
+  blinkInterval: {x: 2.2, y: 5.5}
+  talking: 0
+  talkShapes:
+  - shape: Fcl_MTH_A
+    weight: 0.55

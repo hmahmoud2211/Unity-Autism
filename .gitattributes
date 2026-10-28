@@ -45,3 +45,6 @@ Assets/NUMU/Generated/*.asset filter=lfs diff=lfs merge=lfs -text
 Assets/NUMU/Worlds/**/*Meshes.asset filter=lfs diff=lfs merge=lfs -text
 Assets/NUMU/Worlds/**/*Terrain.asset filter=lfs diff=lfs merge=lfs -text
 **/*.exr filter=lfs diff=lfs merge=lfs -text
+# Anime characters: VRM models and merged character meshes
+*.vrm filter=lfs diff=lfs merge=lfs -text
+Assets/NUMU/Characters/*Meshes.asset filter=lfs diff=lfs merge=lfs -text

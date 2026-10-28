@@ -21,7 +21,21 @@ namespace Numu.EditorTools.World
 
         public static string PrefabPath(string avatar) => $"{Dir}/Char_{avatar}.prefab";
         public static GameObject Prefab(string avatar) => AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath(avatar));
-        public static RuntimeAnimatorController PlayerController => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Dir}/Player_Child.controller");
+        public static RuntimeAnimatorController PlayerController => PlayerControllerFor(PlayerAvatar);
+
+        public static RuntimeAnimatorController PlayerControllerFor(string avatar) =>
+            AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Dir}/{(IsFemale(avatar) ? "Player_Female" : "Player_Child")}.controller");
+
+        const string VroidRoot = "Assets/ThirdParty/VRoid";
+
+        /// <summary>Anime (VRoid/VRM) characters: id → (file folder, female).</summary>
+        static readonly Dictionary<string, bool> VrmFemale = new Dictionary<string, bool> { { "SendagayaShino", true }, { "SakuradaFumiriya", false } };
+
+        public static bool IsFemale(string avatar) =>
+            avatar.StartsWith("Female") || (avatar.StartsWith("VRM_") && VrmFemale.TryGetValue(avatar.Substring(4), out var f) && f);
+
+        /// <summary>The character the child plays: the anime avatar when it has been imported, otherwise the Rocketbox boy.</summary>
+        public static string PlayerAvatar => Prefab("VRM_SendagayaShino") != null ? "VRM_SendagayaShino" : "Male_Child_01";
         public static RuntimeAnimatorController NpcController(bool female) => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{Dir}/{(female ? "NPC_Female" : "NPC_Male")}.controller");
 
         public static void SetupAll(StringBuilder log)
@@ -38,7 +52,8 @@ namespace Numu.EditorTools.World
                 SetupAvatar(name, name.StartsWith("Female") ? female : male);
                 avatars++;
             }
-            log?.AppendLine($"Characters: {avatars} Rocketbox avatars → prefabs with facial rigs; {clips} humanoid clips; 3 animator controllers.");
+            int vrm = SetupVrmCharacters(female, male);
+            log?.AppendLine($"Characters: {avatars} Rocketbox avatars and {vrm} anime (VRM) avatars → prefabs with facial rigs; {clips} humanoid clips; 4 animator controllers.");
         }
 
         // ------------------------------------------------------------------ clips
@@ -165,18 +180,79 @@ namespace Numu.EditorTools.World
 
         static void BuildPlayerController()
         {
-            var ctrl = NewController("Player_Child");
-            ctrl.AddParameter("Speed", AnimatorControllerParameterType.Float);
-            var state = ctrl.CreateBlendTreeInController("Locomotion", out var tree, 0);
-            tree.blendType = BlendTreeType.Simple1D;
-            tree.blendParameter = "Speed";
-            tree.useAutomaticThresholds = false;
-            tree.AddChild(Clip("m_idle_neutral_01"), 0f);
-            tree.AddChild(Clip("m_walk_neutral_01"), 1.25f);
-            tree.AddChild(Clip("m_run_slow_01"), 2.6f);
-            ctrl.layers[0].stateMachine.defaultState = state;
-            State(ctrl, "Wave", "m_wave_01");
-            EditorUtility.SetDirty(ctrl);
+            foreach (var (name, g) in new[] { ("Player_Child", "m"), ("Player_Female", "f") })
+            {
+                var ctrl = NewController(name);
+                ctrl.AddParameter("Speed", AnimatorControllerParameterType.Float);
+                var state = ctrl.CreateBlendTreeInController("Locomotion", out var tree, 0);
+                tree.blendType = BlendTreeType.Simple1D;
+                tree.blendParameter = "Speed";
+                tree.useAutomaticThresholds = false;
+                tree.AddChild(Clip($"{g}_idle_neutral_01"), 0f);
+                tree.AddChild(Clip($"{g}_walk_neutral_01"), 1.25f);
+                tree.AddChild(Clip($"{g}_run_slow_01"), 2.6f);
+                ctrl.layers[0].stateMachine.defaultState = state;
+                State(ctrl, "Wave", $"{g}_wave_01");
+                EditorUtility.SetDirty(ctrl);
+            }
+        }
+
+        /// <summary>
+        /// Anime characters from VRoid/VRM files (imported by UniVRM as VRM 1.0 with URP MToon10): a NUMU prefab
+        /// with the NPC animator, VRoid face presets and character lighting. The imported model stays untouched.
+        /// </summary>
+        static int SetupVrmCharacters(AnimatorController female, AnimatorController male)
+        {
+            if (!Directory.Exists(VroidRoot)) return 0;
+            int n = 0;
+            foreach (var dir in Directory.GetDirectories(VroidRoot))
+            {
+                string id = Path.GetFileName(dir);
+                string path = $"{VroidRoot}/{id}/{id}.vrm";
+                var imp = AssetImporter.GetAtPath(path);
+                if (imp == null) continue;
+                // VRoid exports VRM 0.x: migrate to VRM 1.0 on import, which brings URP MToon10 materials.
+                var so = new SerializedObject(imp);
+                var migrate = so.FindProperty("MigrateToVrm1");
+                var rp = so.FindProperty("RenderPipeline");
+                bool changed = migrate != null && !migrate.boolValue;
+                if (migrate != null) migrate.boolValue = true;
+                if (rp != null && rp.enumNames.Length > 2 && rp.enumValueIndex != System.Array.IndexOf(rp.enumNames, "UniversalRenderPipeline"))
+                {
+                    rp.enumValueIndex = System.Array.IndexOf(rp.enumNames, "UniversalRenderPipeline");
+                    changed = true;
+                }
+                if (changed)
+                {
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    imp.SaveAndReimport();
+                }
+                var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (model == null) continue;
+                var inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                inst.name = $"Char_VRM_{id}";
+                var anim = inst.GetComponent<Animator>();
+                anim.runtimeAnimatorController = VrmFemale.TryGetValue(id, out var f) && f ? female : male;
+                anim.applyRootMotion = false;
+                anim.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                string meshAsset = $"{Dir}/VRM_{id}_Meshes.asset";
+                AssetDatabase.DeleteAsset(meshAsset);
+                foreach (var r in inst.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                    r.updateWhenOffscreen = false;
+                    r.skinnedMotionVectors = false;
+                    MergeSubmeshesByMaterial(r, meshAsset);
+                }
+                var smr = inst.GetComponentsInChildren<SkinnedMeshRenderer>().OrderByDescending(s => s.sharedMesh.blendShapeCount).First();
+                var face = inst.AddComponent<NumuFacialExpressions>();
+                face.face = smr;
+                ConfigureFace(face);
+                PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath($"VRM_{id}"));
+                Object.DestroyImmediate(inst);
+                n++;
+            }
+            return n;
         }
 
         // ------------------------------------------------------------------ avatars
@@ -230,6 +306,73 @@ namespace Numu.EditorTools.World
             Object.DestroyImmediate(inst);
         }
 
+        /// <summary>
+        /// VRoid exports one sub-mesh per material use (the sample girl has 67 slots for 17 materials), and every
+        /// slot is a draw call per pass. Sub-meshes that share a material are merged into one; blendshapes, bones
+        /// and material order are kept. The merged mesh is saved next to the prefab; the imported VRM is untouched.
+        /// </summary>
+        static void MergeSubmeshesByMaterial(SkinnedMeshRenderer r, string assetPath)
+        {
+            var src = r.sharedMesh;
+            var mats = r.sharedMaterials;
+            if (src == null || mats.Length < 2 || src.subMeshCount != mats.Length) return;
+            var unique = mats.Distinct().ToList();
+            if (unique.Count == mats.Length) return;
+            var mesh = Object.Instantiate(src);
+            mesh.name = src.name + "_merged";
+            if (mesh.vertexCount > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            var groups = unique.Select(m => Enumerable.Range(0, mats.Length).Where(i => mats[i] == m).SelectMany(i => src.GetTriangles(i)).ToArray()).ToList();
+            mesh.subMeshCount = unique.Count;
+            for (int i = 0; i < groups.Count; i++) mesh.SetTriangles(groups[i], i, false);
+            mesh.RecalculateBounds();
+            if (!File.Exists(assetPath)) AssetDatabase.CreateAsset(mesh, assetPath);
+            else AssetDatabase.AddObjectToAsset(mesh, assetPath);
+            r.sharedMesh = mesh;
+            r.sharedMaterials = unique.ToArray();
+        }
+
+        /// <summary>
+        /// Anime faces (VRoid "Fcl_" shapes): each emotion combines its brow, eye and mouth shapes, so the whole face
+        /// reads, not just the mouth. VRoid has no fear shape; fear is composed from worried brows, wide eyes and a
+        /// tense, slightly open mouth (verified on the preview sheet).
+        /// </summary>
+        static void ConfigureVroidFace(NumuFacialExpressions face)
+        {
+            face.presets = new List<NumuFacialExpressions.ExpressionPreset>
+            {
+                new NumuFacialExpressions.ExpressionPreset { emotion = NumuEmotion.Neutral },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    emotion = NumuEmotion.Happy,
+                    shapes = { W("Fcl_BRW_Fun", 0.8f), W("Fcl_EYE_Joy", 0.55f), W("Fcl_MTH_Joy", 0.85f) },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    emotion = NumuEmotion.Sad,
+                    // Droopy eyes and corners pulled down: clearly not the wide-eyed fear face.
+                    shapes = { W("Fcl_BRW_Sorrow", 1f), W("Fcl_EYE_Sorrow", 1f), W("Fcl_MTH_Sorrow", 1f), W("Fcl_MTH_Down", 0.4f) },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    emotion = NumuEmotion.Angry,
+                    shapes = { W("Fcl_BRW_Angry", 1f), W("Fcl_EYE_Angry", 0.8f), W("Fcl_MTH_Angry", 0.9f) },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    emotion = NumuEmotion.Fear,
+                    // Worried brows with wide-open eyes and a tense, open mouth.
+                    shapes = { W("Fcl_BRW_Sorrow", 1f), W("Fcl_BRW_Surprised", 0.3f), W("Fcl_EYE_Surprised", 1f), W("Fcl_MTH_Surprised", 0.35f), W("Fcl_MTH_E", 0.4f) },
+                },
+                new NumuFacialExpressions.ExpressionPreset
+                {
+                    emotion = NumuEmotion.Surprise,
+                    shapes = { W("Fcl_BRW_Surprised", 1f), W("Fcl_EYE_Surprised", 1f), W("Fcl_MTH_Surprised", 0.9f) },
+                },
+            };
+            face.blinkShapes = new List<string> { "Fcl_EYE_Close" };
+            face.talkShapes = new List<NumuFacialExpressions.ShapeWeight> { W("Fcl_MTH_A", 0.55f) };
+        }
+
         static NumuFacialExpressions.ShapeWeight W(string shape, float w) => new NumuFacialExpressions.ShapeWeight { shape = shape, weight = w };
 
         /// <summary>
@@ -238,6 +381,12 @@ namespace Numu.EditorTools.World
         /// </summary>
         public static void ConfigureFace(NumuFacialExpressions face)
         {
+            var mesh = face.face != null ? face.face.sharedMesh : null;
+            if (mesh != null && Enumerable.Range(0, mesh.blendShapeCount).Any(i => mesh.GetBlendShapeName(i).Contains("Fcl_")))
+            {
+                ConfigureVroidFace(face);
+                return;
+            }
             face.presets = new List<NumuFacialExpressions.ExpressionPreset>
             {
                 new NumuFacialExpressions.ExpressionPreset { emotion = NumuEmotion.Neutral },

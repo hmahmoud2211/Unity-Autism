@@ -71,6 +71,8 @@ namespace Numu.World
             var anim = target.GetComponent<Animator>();
             var head = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.Head) : null;
             if (head != null) _eyeHeight = Mathf.Clamp(head.position.y - target.position.y + 0.08f, 0.8f, 1.8f);
+            // Taller avatars: orbit around chest height rather than a child's.
+            lookHeight = Mathf.Max(lookHeight, _eyeHeight * 0.72f);
             _body = target.GetComponentsInChildren<Renderer>();
             _bodyShadows = Array.ConvertAll(_body, r => r.shadowCastingMode);
 

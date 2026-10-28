@@ -12,6 +12,9 @@ namespace Numu.World
     /// Presets reference blendshape names on the face mesh, so the same component works for every avatar.
     /// </summary>
     [ExecuteAlways]
+    // After UniVRM's Vrm10Instance (11000), which rewrites expression blendshapes every frame: NUMU's face wins,
+    // while the VRM runtime keeps driving spring bones (hair, clothes).
+    [DefaultExecutionOrder(11100)]
     public class NumuFacialExpressions : MonoBehaviour
     {
         [Serializable]
