@@ -166,7 +166,8 @@ namespace Numu.EditorTools.World
             State(ctrl, "Talk", g == "f" ? "f_gestic_talk_excited_01" : "m_gestic_talk_neutral_01");
             State(ctrl, "Listen", g == "f" ? "f_gestic_listen_neutral_01" : "m_gestic_listen_relaxed_01");
             State(ctrl, "LookAround", g == "f" ? "f_idle_look_around_01" : "m_idle_breathe_01");
-            State(ctrl, "Breathe", Pick($"{g}_idle_breathe_01", $"{g}_idle_neutral_01"));
+            // A calm, front-facing breathing idle (there is no female one; the male clip retargets cleanly).
+            State(ctrl, "Breathe", Pick($"{g}_idle_breathe_01", "m_idle_breathe_01"));
             // Indoor worlds. Where a clip only exists for one gender, the closest available clip stands in.
             State(ctrl, "SitTable", Pick($"{g}_sit_table_idle_neutral_01"));
             State(ctrl, "SitTableRelaxed", Pick($"{g}_sit_table_idle_relaxed_01", $"{g}_sit_table_idle_neutral_01"));
@@ -541,14 +542,18 @@ namespace Numu.EditorTools.World
                 new NumuFacialExpressions.ExpressionPreset { emotion = NumuEmotion.Neutral },
                 new NumuFacialExpressions.ExpressionPreset
                 {
-                    // Duchenne smile: lip corners up, lips parted, cheeks raised, slightly narrowed eyes, brows lifted.
+                    // A warm, open smile: lip corners lifted (not pulled wide), upper teeth just showing, cheeks raised,
+                    // eyes slightly narrowed, brows lifted. Stacking lip-corner pullers and dimples stretched the mouth
+                    // into a flat grimace, so they are left out.
                     emotion = NumuEmotion.Happy,
                     shapes =
                     {
-                        W("AK_44_MouthSmileLeft", 1f), W("AK_45_MouthSmileRight", 1f), W("SR_34_Mouth_Smile_Left", 0.9f), W("SR_35_Mouth_Smile_Right", 0.9f),
-                        W("AU_12_LipCornerPuller", 0.7f), W("AK_07_CheekSquintLeft", 0.7f), W("AK_08_CheekSquintRight", 0.7f), W("AU_06_CheekRaiser", 0.65f),
-                        W("AK_19_EyeSquintLeft", 0.35f), W("AK_20_EyeSquintRight", 0.35f), W("AK_25_JawOpen", 0.24f), W("AK_28_MouthDimpleLeft", 0.3f), W("AK_29_MouthDimpleRight", 0.3f),
-                        W("AK_04_BrowOuterUpLeft", 0.25f), W("AK_05_BrowOuterUpRight", 0.25f), W("AK_03_BrowInnerUp", 0.2f),
+                        W("AK_44_MouthSmileLeft", 1f), W("AK_45_MouthSmileRight", 1f), W("SR_34_Mouth_Smile_Left", 0.55f), W("SR_35_Mouth_Smile_Right", 0.55f),
+                        W("AK_25_JawOpen", 0.1f), W("AK_34_MouthLowerDownLeft", 0.15f), W("AK_35_MouthLowerDownRight", 0.15f),
+                        W("AK_48_MouthUpperUpLeft", 0.25f), W("AK_49_MouthUpperUpRight", 0.25f),
+                        W("AK_07_CheekSquintLeft", 0.55f), W("AK_08_CheekSquintRight", 0.55f), W("AU_06_CheekRaiser", 0.45f),
+                        W("AK_19_EyeSquintLeft", 0.2f), W("AK_20_EyeSquintRight", 0.2f),
+                        W("AK_04_BrowOuterUpLeft", 0.2f), W("AK_05_BrowOuterUpRight", 0.2f), W("AK_03_BrowInnerUp", 0.15f),
                     },
                 },
                 new NumuFacialExpressions.ExpressionPreset

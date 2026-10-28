@@ -144,33 +144,35 @@ MonoBehaviour:
     - shape: AK_45_MouthSmileRight
       weight: 1
     - shape: SR_34_Mouth_Smile_Left
-      weight: 0.9
+      weight: 0.55
     - shape: SR_35_Mouth_Smile_Right
-      weight: 0.9
-    - shape: AU_12_LipCornerPuller
-      weight: 0.7
-    - shape: AK_07_CheekSquintLeft
-      weight: 0.7
-    - shape: AK_08_CheekSquintRight
-      weight: 0.7
-    - shape: AU_06_CheekRaiser
-      weight: 0.65
-    - shape: AK_19_EyeSquintLeft
-      weight: 0.35
-    - shape: AK_20_EyeSquintRight
-      weight: 0.35
+      weight: 0.55
     - shape: AK_25_JawOpen
-      weight: 0.24
-    - shape: AK_28_MouthDimpleLeft
-      weight: 0.3
-    - shape: AK_29_MouthDimpleRight
-      weight: 0.3
-    - shape: AK_04_BrowOuterUpLeft
+      weight: 0.1
+    - shape: AK_34_MouthLowerDownLeft
+      weight: 0.15
+    - shape: AK_35_MouthLowerDownRight
+      weight: 0.15
+    - shape: AK_48_MouthUpperUpLeft
       weight: 0.25
-    - shape: AK_05_BrowOuterUpRight
+    - shape: AK_49_MouthUpperUpRight
       weight: 0.25
-    - shape: AK_03_BrowInnerUp
+    - shape: AK_07_CheekSquintLeft
+      weight: 0.55
+    - shape: AK_08_CheekSquintRight
+      weight: 0.55
+    - shape: AU_06_CheekRaiser
+      weight: 0.45
+    - shape: AK_19_EyeSquintLeft
       weight: 0.2
+    - shape: AK_20_EyeSquintRight
+      weight: 0.2
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 0.2
+    - shape: AK_05_BrowOuterUpRight
+      weight: 0.2
+    - shape: AK_03_BrowInnerUp
+      weight: 0.15
   - emotion: 2
     shapes:
     - shape: AK_03_BrowInnerUp

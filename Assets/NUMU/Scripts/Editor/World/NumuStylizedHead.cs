@@ -11,8 +11,7 @@ namespace Numu.EditorTools.World
     /// imported FBX is never modified.
     /// <list type="bullet">
     /// <item>Larger eyes: each eyeball and its lids are scaled about the eye's pivot and blended smoothly into the
-    /// face. Normals and blendshape deltas get the same transform, so blinks still close and expressions keep
-    /// their shape.</item>
+    /// face. Blendshape deltas get the same transform, so blinks still close and expressions keep their shape.</item>
     /// <item>A modelled hair volume: the painted hair area is copied as a shell offset from the skull (thickest on
     /// the crown, tapering to the hairline) and closed by a skirt. The shell shares the skull's skin weights and
     /// blendshape deltas, so it follows the head and the forehead exactly.</item>
@@ -68,9 +67,8 @@ namespace Numu.EditorTools.World
                     float a = 1f + k * w, b = k * r * dw;
                     Vector3 u = r > 1e-6f ? d / r : Vector3.zero;
                     v[i] = c + d * a;
-                    // Normals transform by the inverse transpose; deltas (small displacements) by the Jacobian itself.
-                    var nn = nrm[i];
-                    nrm[i] = (nn - b / (a + b) * Vector3.Dot(u, nn) * u).normalized;
+                    // The original (smooth) normals are kept: transforming them by the blend's Jacobian shows its
+                    // falloff as a light band across the eyes. Deltas (small displacements) follow the Jacobian.
                     foreach (var shape in shapes)
                         foreach (var f in shape.frames)
                         {

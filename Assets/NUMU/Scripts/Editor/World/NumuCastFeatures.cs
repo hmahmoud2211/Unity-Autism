@@ -98,6 +98,28 @@ namespace Numu.EditorTools.World
                 if (samples.Count > 0) uvPerDeg = samples.Sum(s => s.d * s.deg) / samples.Sum(s => s.deg * s.deg);
             }
 
+            // Separate UV islands of the head (ponytails, buns, scarf pieces): triangles connected through shared
+            // vertices, except the largest (the head itself) and the eye and mouth-interior islands (lower left).
+            var headTris = m.GetTriangles(headSub);
+            var parent = new Dictionary<int, int>();
+            int Find(int a) { while (parent.TryGetValue(a, out int p) && p != a) a = parent[a] = parent.TryGetValue(p, out int pp) ? pp : p; return a; }
+            foreach (int i in headTris) if (!parent.ContainsKey(i)) parent[i] = i;
+            for (int t = 0; t < headTris.Length; t += 3)
+            {
+                int a = Find(headTris[t]);
+                parent[Find(headTris[t + 1])] = a;
+                parent[Find(headTris[t + 2])] = a;
+            }
+            var islands = new Dictionary<int, List<int>>();
+            for (int t = 0; t < headTris.Length; t += 3)
+            {
+                int root = Find(headTris[t]);
+                if (!islands.TryGetValue(root, out var list)) islands[root] = list = new List<int>();
+                list.Add(t);
+            }
+            int largest = islands.OrderByDescending(kv => kv.Value.Count).First().Key;
+            var loose = islands.Where(kv => kv.Key != largest && kv.Value.Any(t => Enumerable.Range(0, 3).Any(k => { var q = uv[headTris[t + k]]; return q.x > 0.37f || q.y > 0.42f; })))
+                               .SelectMany(kv => kv.Value).ToList();
             string P(Vector2 p) => $"[{p.x:F4}, {p.y:F4}]";
             string Ps(IEnumerable<Vector2> ps) => "[" + string.Join(", ", ps.Select(P)) + "]";
             string tex = Path.GetFileName(AssetDatabase.GetAssetPath(r.sharedMaterials[headSub].mainTexture));
@@ -118,10 +140,11 @@ namespace Numu.EditorTools.World
             }
             json.AppendLine($"  \"upper_lip\": {P(Surface(Bone("MUpperLip")))},");
             json.AppendLine($"  \"lower_lip\": {P(Surface(Bone("MBottomLip")))},");
-            json.AppendLine($"  \"nose\": {P(Surface(Bone("MNose")))}");
+            json.AppendLine($"  \"nose\": {P(Surface(Bone("MNose")))},");
+            json.AppendLine("  \"loose_islands\": [" + string.Join(", ", loose.Select(t => $"[{uv[headTris[t]].x:F4}, {uv[headTris[t]].y:F4}, {uv[headTris[t + 1]].x:F4}, {uv[headTris[t + 1]].y:F4}, {uv[headTris[t + 2]].x:F4}, {uv[headTris[t + 2]].y:F4}]")) + "]");
             json.AppendLine("}");
             File.WriteAllText($"{OutDir}/{avatar}.json", json.ToString());
-            return $"{avatar}: iris {P(irisUV)} {uvPerDeg * 2048f:F2} px/deg, lids {Lid(lEye).Count}/{Lid(rEye).Count}";
+            return $"{avatar}: iris {P(irisUV)} {uvPerDeg * 2048f:F2} px/deg, lids {Lid(lEye).Count}/{Lid(rEye).Count}, {loose.Count} loose island triangles";
         }
     }
 }

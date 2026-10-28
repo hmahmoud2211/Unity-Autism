@@ -13,7 +13,7 @@ All twelve human characters are Microsoft Rocketbox avatars (MIT), restyled by o
 | **Eyes:** large and clear, with white sclera, a big round iris with a dark rim, a black pupil and a highlight, and a bold upper lash line. They are also physically enlarged in the mesh (×1.22 for children, ×1.16 for adults). | iris colour |
 | **Brows:** thick, gently arched strokes from one template placed relative to the eyes, dark brown at most | brow colour; slightly thinner for women and girls |
 | **Nose and mouth:** simple, with a soft mouth in a muted skin tone | skin tone (each keeps their own, harmonised toward the reference's hue) |
-| **Skin:** flat, softly shaded, no pores or baked photo lighting | — |
+| **Skin:** one clean tone on the face (the engine's lighting shades it), no pores or baked photo lighting; nostrils are soft darker skin, not black holes | — |
 | **Hair or headscarf:** a few clean colours with broad shading. Short painted hair gets a modelled hair cap (a mesh shell); adults keep their hair cards, recoloured. | hair colour and style; headscarves |
 | **Clothes:** a few flat colours with broad shading, with no prints, denim fades or fabric texture | clothing colours and garments |
 | **Materials:** matte URP Lit (smoothness 0.12–0.2), no normal or detail maps | — |
@@ -69,13 +69,15 @@ It drives three layers, and each one works on any humanoid on top of any clip:
 | Emotion | Face | Head | Hands |
 |---|---|---|---|
 | Neutral | calm, eyes slightly wide | — | — |
-| Happy | broad smile with parted lips, raised cheeks, slightly narrowed eyes, lifted brows | chin up a little, friendly tilt | (NPCs: wave) |
+| Happy | a warm open smile: corners lifted (not pulled wide), upper teeth just showing, raised cheeks, slightly narrowed eyes, lifted brows | chin up a little, friendly tilt | (NPCs: wave) |
 | Sad | inner brows up, mouth corners down, lowered lids and gaze | lowered | — |
 | Angry | brows down and together, narrowed eyes, pressed lips | lowered, glaring | — |
 | Surprised | whole brow raised, eyes wide, a round open "o" | back a little | **both hands to the face**, as in the reference |
 | Afraid | brows raised and drawn together, eyes wide, lips stretched; child-friendly, not scary | down and slightly away | hands up in front of the chin, palms out |
 | Disgust | nose wrinkled, upper lip raised, brows lowered | turned away | — |
 | **Confused** (new) | one brow up, one down; mouth pulled to one side and pursed | clear tilt toward the hand | **scratching the head** |
+
+**Happy is a smile, not a stretch:** stacking several lip-corner pullers and dimples pulled the mouth into a wide, flat grimace (`07_lina_happy_fix.jpg`). The preset now lifts the corners and leaves those shapes out.
 
 **Brow lowering is kept low in Angry:** at full weight, `AU_04` and `SR_04` drag the whole upper forehead and the hairline unevenly. `BrowDown` alone lowers the brows cleanly.
 
@@ -96,6 +98,7 @@ All are from Unity Play Mode, in `Screenshots/Character_Cast/`:
 - `04_cast_faces.jpg`: neutral face close-ups of the cast.
 - `05_worlds.jpg`: the cast in Home, School, Supermarket and Park gameplay. Console: 0 errors, 0 warnings in all four.
 - `06_children_expressions.jpg`: Lina and Mia in seven emotions.
+- `07_lina_happy_fix.jpg`: Lina's Happy before and after the smile fix, and in the Park.
 
 ### Compared with the main reference
 

@@ -38,7 +38,7 @@ CAST = {
     "Male_Child_02": dict(iris=(64, 42, 30)),                                  # Omar
     "Female_Child_01": dict(iris=(96, 136, 168), hair=(206, 170, 112), brow=(122, 90, 58), hair_dE=9),  # Mia
     "Female_Child_02": dict(iris=(72, 48, 34), brow=(58, 38, 26), scarf=True),                # Lina
-    "Female_Adult_01": dict(iris=(92, 126, 156), hair=(200, 162, 108), brow=(118, 88, 60), hair_dE=9),  # shopper
+    "Female_Adult_01": dict(iris=(92, 126, 156), hair=(200, 162, 108), brow=(118, 88, 60), hair_dE=7),  # shopper
     "Female_Adult_06": dict(iris=(72, 48, 34), brow=(58, 38, 26), scarf=True),                # Mum
     "Female_Adult_12": dict(iris=(80, 56, 38)),                                # cashier Nora
     "Female_Adult_14": dict(iris=(92, 112, 78)),                               # teacher Ms. Sara
@@ -212,9 +212,16 @@ def head(name, cfg, feat, head_path):
         tone = np.clip((0.5 * measured + 0.5 * measured.mean() * REF_SKIN_HUE) * 1.04, 0, 255)
 
     islands = (x < 0.37) & (y > 0.58) & (L < 0.35)       # eye and mouth-interior islands (dark), not the neck skin
-    area = (L > 0.035) & ~islands
-    lab_a, _ = ndi.label(area)
-    main = lab_a == np.bincount(lab_a[lab_a > 0]).argmax()
+    # Background is the large black area outside the UV islands; near-black hair strands inside the hair are not.
+    area = ~keep_large(L < 0.035, 0.005) & ~islands
+    # The main head island versus separate islands (ponytails, buns, scarf pieces), from the mesh's own UV islands
+    # (the texture bleeds colour between islands, so they cannot be told apart from the image).
+    loose_img = Image.new("L", (W, H), 0)
+    draw = ImageDraw.Draw(loose_img)
+    for t in feat.get("loose_islands", []):
+        draw.polygon([(t[0] * W, (1 - t[1]) * H), (t[2] * W, (1 - t[3]) * H), (t[4] * W, (1 - t[5]) * H)], fill=255)
+    loose_mask = ndi.binary_dilation(np.asarray(loose_img) > 0, iterations=int(4 * s) + 1)
+    main = area & ~loose_mask
     # Hair is told from skin by colour against the character's own (measured) skin. On the main head island it is
     # only allowed above the eyes (plus temples), so neck shadows and stubble never become beards. Separate islands
     # (ponytails, buns, scarf pieces, accessories) are never skin; headscarves are classified freely.
@@ -231,11 +238,21 @@ def head(name, cfg, feat, head_path):
         other |= (np.abs(x - 0.5) < 0.17) & (y < fringe_y) & (y > 0.12)
     other = keep_large(other, 0.004)
     out, colours = flatten(a, other, 3, 8 * s, 0.55, 24 * s)
-    # Clusters that are really skin (shaded temples, ears) go back to skin.
-    hair_regions = [(c, r) for c, r in colours if skin_distance(c[None, None, :], measured)[0, 0] > 12]
+    # Clusters that are really skin (shaded temples, ears) go back to skin. Inside a headscarf there is no hair, so
+    # anything with the skin's hue that is not much darker is skin too (the shadowed jaw); elsewhere this would also
+    # catch blond or ginger hair.
+    def skin_like(c):
+        if skin_distance(c[None, None, :], measured)[0, 0] < 12:
+            return True
+        hue = float(np.dot(c, measured) / (np.linalg.norm(c) * np.linalg.norm(measured) + 1e-6))
+        return bool(cfg.get("scarf")) and hue > 0.993 and float(lum(c)) > 0.5 * float(lum(measured))
+    hair_regions = [(c, r) for c, r in colours if not skin_like(c)]
+    loose = other & ~main                                # separate islands: ponytails, buns, scarf pieces
     other = np.zeros_like(other)
     for _, r in hair_regions:
         other |= r
+    loose &= ~other                                      # ...that came out skin-coloured: painted with the hair below
+    other |= loose
     skin = area & ~other
 
     # Eye openings and nostrils keep their dark inner rims (and nothing else: the original brows are repainted).
@@ -250,8 +267,16 @@ def head(name, cfg, feat, head_path):
         sizes = ndi.sum(slit, lab_s, range(1, n + 1))
         slit = np.isin(lab_s, 1 + np.argsort(sizes)[-2:])  # the two eye openings (not make-up or lashes around them)
     holes = slit | (face & (L < 0.2) & near_nose)
-    out[skin & ~holes] = soft_shade(a, skin & ~holes, tone, 0.25, 14 * s)[skin & ~holes]
-    out[holes] = a[holes]
+    # The face is one clean tone (the engine's lighting shades it, as in the reference); only the scalp, ears and
+    # neck keep a little of the original broad shading, faded out toward the face.
+    shaded = soft_shade(a, skin & ~holes, tone, 0.25, 14 * s)
+    inner = feather(((xx - centre[0]) / (1.23 * D)) ** 2 + ((yy - centre[1]) / (1.16 * D)) ** 2 < 0.8, 40 * s)
+    shaded = shaded * (1 - inner) + tone * inner
+    out[skin & ~holes] = shaded[skin & ~holes]
+    # Eye openings keep their dark rims; nostrils become a soft, darker skin tone rather than black holes.
+    out[slit] = a[slit]
+    nostrils = holes & ~slit
+    out[nostrils] = tone * 0.62
 
     hair = np.asarray(hair_regions[0][0] if hair_regions else (60, 40, 30), np.float32)
     target = np.asarray(cfg.get("hair") or hair, np.float32)
@@ -260,6 +285,8 @@ def head(name, cfg, feat, head_path):
         for col, region in hair_regions:
             ratio = float(np.clip(float(lum(col)) / max(float(lum(hair)), 1e-3), 0.85, 1.12))
             out[region] = out[region] / np.maximum(col, 1) * target * ratio
+    if loose.any():
+        out[loose] = soft_shade(a, loose, target, 0.5, 12 * s)[loose]
     hair = target
 
     # Brows: one template for every face, scaled by the eye distance; the height follows the rig's brow bones.
@@ -332,14 +359,14 @@ def body(name, cfg, tone, body_path):
     if cfg.get("body") == "sweater":
         return sweater(cfg, tone, raw, a)
     W = raw.shape[1]
-    bg = lum(raw) < 0.03
+    bg = keep_large(lum(raw) < 0.03, 0.005)
     # Skin must match the character's skin in hue and chroma (a*, b*), not only overall: beige fabric has less red.
     lab, t = to_lab(a), to_lab(np.asarray(tone, np.float32))
     tol = cfg.get("skin_dE", 9)
     skin = (np.abs(lab[..., 1] - t[1]) < tol * 0.7) & (np.abs(lab[..., 2] - t[2]) < tol) & (np.abs(lab[..., 0] - t[0]) < 30)
     skin = keep_large(~bg & skin, 0.0005)
     # Specks inside skin (nails, arm hair, shading) are skin; specks of skin colour inside clothes are clothes.
-    specks = (~bg & ~skin) & ~keep_large(~bg & ~skin, 0.0006)
+    specks = (~bg & ~skin) & ~keep_large(~bg & ~skin, 0.002)
     skin |= specks
     cloth = ~bg & ~skin
     # Simple clothes: a few flat colours with broad shading, no prints, fades or fabric texture.
