@@ -1,25 +1,85 @@
 # NUMU characters and camera
 
-## NUMU character style (matching the JeStiMulE reference)
+## NUMU character style and expressions (matching the JeStiMulE references)
 
-Reference: `Assets/References/Character_Style_Reference.png`, a JeStiMulE boy in a supermarket. The player is now **`Char_NUMU_Boy`** (`Assets/NUMU/Characters/Char_NUMU_Boy.prefab`): the Rocketbox boy (MIT) restyled. It keeps the same humanoid rig, animations, `EmotionController` and 175 face blendshapes.
+References in `Assets/References/`:
+- `Character_Style_Reference.png` defines style and proportions: a long face, big light eyes, thick dark brows, a smooth orange hair cap, and a dark striped V-neck sweater.
+- `Character_Expression_Reference.png` defines expression clarity, especially surprise: raised brows, wide eyes, an open mouth, and both hands up to the face.
 
-- **Repainted textures** (`Tools/AssetPipeline/stylize_character.py` → `Assets/NUMU/Characters/Stylized/Textures`):
-  - flat pale skin with pores and photographic lighting removed
-  - a smooth burnt-orange hair cap with a clean hairline
-  - thick dark brows, light blue eyes, a soft simple mouth
-  - a dark V-neck sweater with wide black and grey stripes that wrap the torso and sleeves
-  - plain slate trousers
-- **Matte materials** (URP Lit, no normal maps, smoothness 0.08–0.18) for the soft, lightly shaded look.
-- **Head proportions:** the head bone is scaled (0.93, 1.1, 0.96) for a longer, narrower face.
-- **Resting face** (`NumuFacialExpressions.baseShapes`): slightly wider eyes, a soft downward glance and gently raised inner brows (calm, a little shy).
+The player is **`Char_NUMU_Boy`** (`Assets/NUMU/Characters/Char_NUMU_Boy.prefab`). It is the Rocketbox boy (MIT) restyled in code, with no Blender. It keeps the humanoid rig, the animations and all 175 face blendshapes. The imported FBX is never modified.
 
-Comparison: `Screenshots/Character_Style/01_reference_vs_numu_boy.jpg`.
+**Face and hair** (`NumuStylizedHead`, a derived mesh `NUMU_Boy_Meshes.asset`, plus `Tools/AssetPipeline/stylize_character.py`):
+- **Larger eyes:**
+  - The eyeballs and lids are scaled ×1.22 about each eye's pivot and blended smoothly into the face.
+  - Normals and blendshape deltas get the same transform, so blinks still close and expressions keep their shape.
+- **Clean painted eyes:**
+  - bright whites
+  - a large round light-blue iris with a dark rim
+  - a black pupil and a highlight
+  - a bold upper lash line
+- **Brows:** thick, dark, gently arched strokes painted over the original brow positions, so they move with the brow blendshapes.
+- **Mouth:** a soft rose mouth taken from the original lip shape.
+- **Modelled hair volume:**
+  - The painted hair area is copied as a shell: 1.3 cm thick on the crown, 0.8 cm on the sides, tapering to the hairline. It is closed by a skirt.
+  - It has a smoothed hairline and a side-swept fringe, in one clean orange.
+  - The shell shares the skull's skin weights and blendshape deltas, so it moves with the head and forehead.
+- **Head proportions:** a larger head with a longer face. The head bone is scaled (1.23, 1.13, 1.09); on this rig local X is vertical, Y depth and Z width.
+- **Materials:** matte URP Lit with no normal maps, for the soft, lightly shaded look.
 
-**Still different from the reference.** These need real modelling, in Blender or a custom character, and can't be done with textures alone:
-- **Face shape:** a teenager's long face, strong nose and jaw and bigger eye sockets. The base mesh is a younger child with a rounder face.
-- **Hair:** the reference hair is a separate smooth volume with a side part. Here it is painted onto the skull, so its outline is the head's outline plus the original fringe.
-- **Pose:** the reference's slouched, head-down pose needs a dedicated idle animation.
+**Expressions** (`NumuFacialExpressions` presets in `NumuCharacterSetup.ConfigureFace`, shared by all Rocketbox characters):
+
+| Emotion | Face | Hands (`EmotionController`, arm IK) |
+|---|---|---|
+| Neutral | calm, eyes slightly wide | — |
+| Happy | broad smile with parted lips, raised cheeks, slightly narrowed eyes, brows lifted | — |
+| Sad | inner brows up, mouth corners down, lids lowered | — |
+| Angry | brows down and together, narrowed eyes, pressed lips | — |
+| Surprised | whole brow raised, eyes wide, jaw dropped into a round "o" | **both hands to the face** (fingertips on the cheeks, palms in, elbows down) |
+| Afraid | brows raised and drawn together, eyes wide, lips stretched | **hands raised in front of the chin, palms out** |
+| Disgust | nose wrinkled, upper lip raised, brows lowered | — |
+
+`EmotionController` is the reusable entry point for any humanoid:
+- `Show(emotion, intensity, withGesture)` sets the face. With a gesture it also plays the animator gesture and the hand pose.
+- `Hands(HandGesture)` sets the hand pose on its own.
+- `Perform(...)` plays a timed moment.
+- `ReleaseGesture()` returns to idle.
+
+Hand poses run in the animator's IK pass on top of any clip and blend in over 0.35 s. They locate the face from the eye bones, so they adapt to head size.
+
+**Test scene:** `Assets/Scenes/NUMU_CharacterTest.unity` (menu **NUMU → Characters → Build Character Test Scene**).
+- The boy stands on a small town square, framed like the expression reference.
+- He shows **Surprised with hands** on Play.
+- Keys **1–7** switch emotions; **H** toggles the hands.
+
+Screenshots, all from Unity Play Mode, in `Screenshots/Character_Expressions/` (`00_surprised_test_scene.jpg` is the test scene on Play):
+- `01_surprised_vs_reference.jpg`
+- `02_style_vs_reference.jpg`
+- `03_expression_sheet.jpg`
+- `04_park_third_person.jpg` and `05_park_surprise_closeup.jpg`: the same character in the Park, in gameplay.
+
+**Compared with the references:**
+- **Matches:**
+  - pale, softly shaded skin
+  - large light eyes with clear whites
+  - thick dark arched brows
+  - a smooth orange hair cap with a fringe
+  - a long face and a larger head
+  - the dark striped V-neck and plain trousers
+  - the surprised face and the hands-to-face pose
+  - all six required emotions read clearly at close-up and cutscene distance
+- **Still different:**
+  - **Hair:** a smooth helmet built from the skull shape. The reference has a sculpted side part and a fringe tuft with soft locks, and its hair stops higher at the nape.
+  - **Eyes:** the expression reference's eyes are larger, with dark brown irises. The NUMU boy keeps the style reference's light-blue eyes.
+  - **Face shape:** the cheeks, nose and chin are the Rocketbox boy's, only proportionally reshaped. The reference has rounder cheeks, a smaller, softer nose and bigger ears.
+  - **Hands:** the fingers keep the idle clip's relaxed curl. The reference spreads the fingers on the face. Afraid's palms-out hands look slightly stiff.
+  - **Pose:** the style reference's slouched, head-down idle needs its own animation clip.
+  - **Clothes:** the expression reference wears a green crew-neck. By design, NUMU follows the style reference's sweater.
+
+**Needs Blender or a custom character for an exact match:**
+- a sculpted hair mesh with a side part and locks
+- a stylized head with rounder cheeks, a smaller nose and larger eye sockets, re-using the same ARKit/Rocketbox blendshape names so `NumuFacialExpressions` keeps working
+- finger poses or a dedicated "hands to face" clip, so the fingers spread naturally
+- a slouched idle
 
 ## Anime characters (VRoid / VRM): optional, off by default
 

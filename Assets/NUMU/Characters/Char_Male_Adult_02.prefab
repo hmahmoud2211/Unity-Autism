@@ -103,27 +103,33 @@ MonoBehaviour:
     - shape: AK_45_MouthSmileRight
       weight: 1
     - shape: SR_34_Mouth_Smile_Left
-      weight: 0.75
+      weight: 0.9
     - shape: SR_35_Mouth_Smile_Right
-      weight: 0.75
+      weight: 0.9
     - shape: AU_12_LipCornerPuller
-      weight: 0.55
+      weight: 0.7
     - shape: AK_07_CheekSquintLeft
-      weight: 0.6
+      weight: 0.7
     - shape: AK_08_CheekSquintRight
-      weight: 0.6
+      weight: 0.7
     - shape: AU_06_CheekRaiser
-      weight: 0.55
+      weight: 0.65
     - shape: AK_19_EyeSquintLeft
-      weight: 0.3
+      weight: 0.35
     - shape: AK_20_EyeSquintRight
-      weight: 0.3
+      weight: 0.35
     - shape: AK_25_JawOpen
-      weight: 0.14
+      weight: 0.24
     - shape: AK_28_MouthDimpleLeft
       weight: 0.3
     - shape: AK_29_MouthDimpleRight
       weight: 0.3
+    - shape: AK_04_BrowOuterUpLeft
+      weight: 0.25
+    - shape: AK_05_BrowOuterUpRight
+      weight: 0.25
+    - shape: AK_03_BrowInnerUp
+      weight: 0.2
   - emotion: 2
     shapes:
     - shape: AK_03_BrowInnerUp
@@ -153,33 +159,35 @@ MonoBehaviour:
   - emotion: 3
     shapes:
     - shape: AK_01_BrowDownLeft
-      weight: 0.9
+      weight: 1
     - shape: AK_02_BrowDownRight
-      weight: 0.9
+      weight: 1
     - shape: AU_04_BrowLowerer
-      weight: 0.35
+      weight: 0.15
     - shape: SR_04_Eye_Frown
-      weight: 0.3
+      weight: 0.15
     - shape: AK_50_NoseSneerLeft
-      weight: 0.6
+      weight: 0.7
     - shape: AK_51_NoseSneerRight
-      weight: 0.6
+      weight: 0.7
     - shape: AU_09_NoseWrinkler
-      weight: 0.3
+      weight: 0.35
     - shape: AK_19_EyeSquintLeft
-      weight: 0.4
+      weight: 0.5
     - shape: AK_20_EyeSquintRight
-      weight: 0.4
+      weight: 0.5
     - shape: AU_23_LipTightener
-      weight: 0.5
+      weight: 0.65
     - shape: AK_36_MouthPressLeft
-      weight: 0.5
+      weight: 0.6
     - shape: AK_37_MouthPressRight
-      weight: 0.5
+      weight: 0.6
     - shape: AK_30_MouthFrownLeft
-      weight: 0.4
+      weight: 0.55
     - shape: AK_31_MouthFrownRight
-      weight: 0.4
+      weight: 0.55
+    - shape: AU_17_ChinRaiser
+      weight: 0.35
   - emotion: 4
     shapes:
     - shape: AK_03_BrowInnerUp
@@ -199,13 +207,13 @@ MonoBehaviour:
     - shape: AU_05_UpperLidRaiser
       weight: 0.5
     - shape: AK_46_MouthStretchLeft
-      weight: 0.8
+      weight: 1
     - shape: AK_47_MouthStretchRight
-      weight: 0.8
+      weight: 1
     - shape: AU_20_LipStretcher
-      weight: 0.5
+      weight: 0.6
     - shape: AK_25_JawOpen
-      weight: 0.25
+      weight: 0.32
   - emotion: 6
     shapes:
     - shape: AK_50_NoseSneerLeft
@@ -255,9 +263,9 @@ MonoBehaviour:
     - shape: AK_25_JawOpen
       weight: 0.55
     - shape: AU_26_JawDrop
-      weight: 0.4
+      weight: 0.35
     - shape: AK_32_MouthFunnel
-      weight: 0.3
+      weight: 0.45
   emotion: 0
   intensity: 1
   transitionTime: 0.35
@@ -293,6 +301,9 @@ MonoBehaviour:
   fearGesture: Nervous
   surpriseGesture: 
   disgustGesture: 
+  surpriseHands: 1
+  fearHands: 2
+  handBlendTime: 0.35
 --- !u!137 &2317060882619054127 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: -5423888773139566379, guid: d7405ef9eb6084bdfb26ceffa213fbca, type: 3}

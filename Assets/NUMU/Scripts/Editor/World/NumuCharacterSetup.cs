@@ -66,7 +66,7 @@ namespace Numu.EditorTools.World
                 avatars++;
             }
             int vrm = SetupVrmCharacters(female, male);
-            SetupStylizedBoy(male);
+            SetupStylizedBoy(male, log);
             log?.AppendLine($"Characters: {avatars} Rocketbox avatars and {vrm} anime (VRM) avatars → prefabs with facial rigs; {clips} humanoid clips; 4 animator controllers.");
         }
 
@@ -166,6 +166,7 @@ namespace Numu.EditorTools.World
             State(ctrl, "Talk", g == "f" ? "f_gestic_talk_excited_01" : "m_gestic_talk_neutral_01");
             State(ctrl, "Listen", g == "f" ? "f_gestic_listen_neutral_01" : "m_gestic_listen_relaxed_01");
             State(ctrl, "LookAround", g == "f" ? "f_idle_look_around_01" : "m_idle_breathe_01");
+            State(ctrl, "Breathe", Pick($"{g}_idle_breathe_01", $"{g}_idle_neutral_01"));
             // Indoor worlds. Where a clip only exists for one gender, the closest available clip stands in.
             State(ctrl, "SitTable", Pick($"{g}_sit_table_idle_neutral_01"));
             State(ctrl, "SitTableRelaxed", Pick($"{g}_sit_table_idle_relaxed_01", $"{g}_sit_table_idle_neutral_01"));
@@ -328,7 +329,7 @@ namespace Numu.EditorTools.World
         /// shading, a slightly longer and narrower head, and a calm, slightly shy resting face. Same humanoid rig,
         /// animations and 175 facial blendshapes as the original.
         /// </summary>
-        static void SetupStylizedBoy(AnimatorController controller)
+        static void SetupStylizedBoy(AnimatorController controller, StringBuilder log)
         {
             const string texDir = "Assets/NUMU/Characters/Stylized/Textures";
             var headTex = AssetDatabase.LoadAssetAtPath<Texture2D>($"{texDir}/numu_boy_head.png");
@@ -350,18 +351,28 @@ namespace Numu.EditorTools.World
                     else if (mats[i].name.EndsWith("_body")) mats[i] = body;
                 }
                 r.sharedMaterials = mats;
+                // Larger eyes and a modelled hair volume (derived mesh; the FBX is untouched).
+                int headSub = System.Array.IndexOf(mats, head);
+                if (headSub < 0) continue;
+                r.sharedMesh = NumuStylizedHead.Build(r, headSub, headTex, $"{Dir}/{StylizedBoy}_Meshes.asset", new NumuStylizedHead.Settings(), out string report);
+                var lb = r.localBounds;
+                lb.Expand(0.06f);
+                r.localBounds = lb;
+                log?.AppendLine(report);
             }
             var anim = inst.GetComponent<Animator>();
             anim.runtimeAnimatorController = controller;
-            // A slightly longer, narrower face, as in the reference (humanoid animation never writes bone scale).
+            // A larger head with a longer, slightly narrower face, as in the references (humanoid animation never
+            // writes bone scale). The Rocketbox head bone's local X is vertical, Y is depth and Z is width.
             var headBone = anim.GetBoneTransform(HumanBodyBones.Head);
-            if (headBone != null) headBone.localScale = new Vector3(0.93f, 1.1f, 0.96f);
+            if (headBone != null) headBone.localScale = new Vector3(1.23f, 1.13f, 1.09f);
             var face = inst.GetComponent<NumuFacialExpressions>();
-            // Resting look: eyes a little wider, a soft glance down, inner brows slightly raised.
+            // Resting look: eyes a little wider (the eyes are already enlarged in the mesh), a soft glance down,
+            // inner brows slightly raised. Kept light so squints (happy, angry) still read.
             face.baseShapes = new List<NumuFacialExpressions.ShapeWeight>
             {
-                W("AK_21_EyeWideLeft", 0.45f), W("AK_22_EyeWideRight", 0.45f), W("AK_11_EyeLookDownLeft", 0.12f), W("AK_12_EyeLookDownRight", 0.12f),
-                W("AK_03_BrowInnerUp", 0.18f),
+                W("AK_21_EyeWideLeft", 0.2f), W("AK_22_EyeWideRight", 0.2f), W("AK_11_EyeLookDownLeft", 0.1f), W("AK_12_EyeLookDownRight", 0.1f),
+                W("AK_03_BrowInnerUp", 0.12f),
             };
             PrefabUtility.SaveAsPrefabAsset(inst, PrefabPath(StylizedBoy));
             Object.DestroyImmediate(inst);
@@ -459,13 +470,14 @@ namespace Numu.EditorTools.World
                 new NumuFacialExpressions.ExpressionPreset { emotion = NumuEmotion.Neutral },
                 new NumuFacialExpressions.ExpressionPreset
                 {
-                    // Duchenne smile: lip corners up + cheeks raised + slightly narrowed eyes.
+                    // Duchenne smile: lip corners up, lips parted, cheeks raised, slightly narrowed eyes, brows lifted.
                     emotion = NumuEmotion.Happy,
                     shapes =
                     {
-                        W("AK_44_MouthSmileLeft", 1f), W("AK_45_MouthSmileRight", 1f), W("SR_34_Mouth_Smile_Left", 0.75f), W("SR_35_Mouth_Smile_Right", 0.75f),
-                        W("AU_12_LipCornerPuller", 0.55f), W("AK_07_CheekSquintLeft", 0.6f), W("AK_08_CheekSquintRight", 0.6f), W("AU_06_CheekRaiser", 0.55f),
-                        W("AK_19_EyeSquintLeft", 0.3f), W("AK_20_EyeSquintRight", 0.3f), W("AK_25_JawOpen", 0.14f), W("AK_28_MouthDimpleLeft", 0.3f), W("AK_29_MouthDimpleRight", 0.3f),
+                        W("AK_44_MouthSmileLeft", 1f), W("AK_45_MouthSmileRight", 1f), W("SR_34_Mouth_Smile_Left", 0.9f), W("SR_35_Mouth_Smile_Right", 0.9f),
+                        W("AU_12_LipCornerPuller", 0.7f), W("AK_07_CheekSquintLeft", 0.7f), W("AK_08_CheekSquintRight", 0.7f), W("AU_06_CheekRaiser", 0.65f),
+                        W("AK_19_EyeSquintLeft", 0.35f), W("AK_20_EyeSquintRight", 0.35f), W("AK_25_JawOpen", 0.24f), W("AK_28_MouthDimpleLeft", 0.3f), W("AK_29_MouthDimpleRight", 0.3f),
+                        W("AK_04_BrowOuterUpLeft", 0.25f), W("AK_05_BrowOuterUpRight", 0.25f), W("AK_03_BrowInnerUp", 0.2f),
                     },
                 },
                 new NumuFacialExpressions.ExpressionPreset
@@ -481,13 +493,15 @@ namespace Numu.EditorTools.World
                 },
                 new NumuFacialExpressions.ExpressionPreset
                 {
-                    // Brows pulled down and together, narrowed eyes, pressed lips.
+                    // Brows pulled down and together, narrowed eyes, pressed lips. AU_04 and SR_04 stay low: at full weight
+                    // they drag the whole upper forehead (and the NUMU boy's hairline) down unevenly.
                     emotion = NumuEmotion.Angry,
                     shapes =
                     {
-                        W("AK_01_BrowDownLeft", 0.9f), W("AK_02_BrowDownRight", 0.9f), W("AU_04_BrowLowerer", 0.35f), W("SR_04_Eye_Frown", 0.3f),
-                        W("AK_50_NoseSneerLeft", 0.6f), W("AK_51_NoseSneerRight", 0.6f), W("AU_09_NoseWrinkler", 0.3f), W("AK_19_EyeSquintLeft", 0.4f), W("AK_20_EyeSquintRight", 0.4f),
-                        W("AU_23_LipTightener", 0.5f), W("AK_36_MouthPressLeft", 0.5f), W("AK_37_MouthPressRight", 0.5f), W("AK_30_MouthFrownLeft", 0.4f), W("AK_31_MouthFrownRight", 0.4f),
+                        W("AK_01_BrowDownLeft", 1f), W("AK_02_BrowDownRight", 1f), W("AU_04_BrowLowerer", 0.15f), W("SR_04_Eye_Frown", 0.15f),
+                        W("AK_50_NoseSneerLeft", 0.7f), W("AK_51_NoseSneerRight", 0.7f), W("AU_09_NoseWrinkler", 0.35f), W("AK_19_EyeSquintLeft", 0.5f), W("AK_20_EyeSquintRight", 0.5f),
+                        W("AU_23_LipTightener", 0.65f), W("AK_36_MouthPressLeft", 0.6f), W("AK_37_MouthPressRight", 0.6f), W("AK_30_MouthFrownLeft", 0.55f), W("AK_31_MouthFrownRight", 0.55f),
+                        W("AU_17_ChinRaiser", 0.35f),
                     },
                 },
                 new NumuFacialExpressions.ExpressionPreset
@@ -498,7 +512,7 @@ namespace Numu.EditorTools.World
                     {
                         W("AK_03_BrowInnerUp", 1f), W("AU_01_InnerBrowRaiser", 0.6f), W("AK_04_BrowOuterUpLeft", 0.6f), W("AK_05_BrowOuterUpRight", 0.6f),
                         W("AU_02_OuterBrowRaiser", 0.4f), W("AK_21_EyeWideLeft", 1f), W("AK_22_EyeWideRight", 1f), W("AU_05_UpperLidRaiser", 0.5f),
-                        W("AK_46_MouthStretchLeft", 0.8f), W("AK_47_MouthStretchRight", 0.8f), W("AU_20_LipStretcher", 0.5f), W("AK_25_JawOpen", 0.25f),
+                        W("AK_46_MouthStretchLeft", 1f), W("AK_47_MouthStretchRight", 1f), W("AU_20_LipStretcher", 0.6f), W("AK_25_JawOpen", 0.32f),
                     },
                 },
                 new NumuFacialExpressions.ExpressionPreset
@@ -515,13 +529,13 @@ namespace Numu.EditorTools.World
                 },
                 new NumuFacialExpressions.ExpressionPreset
                 {
-                    // Whole brow raised, eyes wide open, jaw dropped.
+                    // Whole brow raised, eyes wide open, jaw dropped into a rounded "o" (the expression reference).
                     emotion = NumuEmotion.Surprise,
                     shapes =
                     {
                         W("AK_04_BrowOuterUpLeft", 1f), W("AK_05_BrowOuterUpRight", 1f), W("AU_02_OuterBrowRaiser", 0.6f), W("AK_03_BrowInnerUp", 0.7f),
                         W("AK_21_EyeWideLeft", 1f), W("AK_22_EyeWideRight", 1f), W("AU_05_UpperLidRaiser", 0.5f), W("AK_25_JawOpen", 0.55f),
-                        W("AU_26_JawDrop", 0.4f), W("AK_32_MouthFunnel", 0.3f),
+                        W("AU_26_JawDrop", 0.35f), W("AK_32_MouthFunnel", 0.45f),
                     },
                 },
             };
